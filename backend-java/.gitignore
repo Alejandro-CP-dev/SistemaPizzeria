@@ -1,0 +1,7 @@
+target/
+nbproject/private/
+*.class
+*.log
+.settings/
+.project
+.classpath

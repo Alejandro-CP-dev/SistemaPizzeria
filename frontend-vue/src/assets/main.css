@@ -1,0 +1,14 @@
+/* box-sizing: border-box hace que el padding y el borde de un elemento se cuenten DENTRO del
+   ancho/alto que le pongamos en CSS, en vez de sumarse aparte; así medir tamaños en toda la
+   página es más predecible. Se aplica a todos los elementos (*) y también a los pseudo-elementos. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* El navegador le pone un margen por defecto al <body>; lo quitamos para que el fondo de la
+   página (definido en App.vue) llegue hasta los bordes de la pantalla sin espacios en blanco. */
+body {
+  margin: 0;
+}

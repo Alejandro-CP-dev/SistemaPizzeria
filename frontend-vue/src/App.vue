@@ -1,62 +1,44 @@
 <script setup>
 import { ref } from "vue"
+import { onMounted } from "vue"
 import PizzaCard from "./components/PizzaCard.vue"
 
 // ref() convierte este arreglo en un dato reactivo: si en el futuro se agrega, quita o edita
 // una pizza, Vue se da cuenta solo y vuelve a dibujar la pantalla sin que lo hagamos a mano.
-// Por ahora son datos de prueba (mock) mientras no hay conexión a una base de datos real.
-// El campo "imagen" guarda solo el nombre del archivo (así se va a guardar en la BD); la ruta
-// completa (/images/pizzas/...) se arma dentro de PizzaCard.vue, no aquí.
-const pizzas = ref([
-  {
-    id: 1,
-    imagen: "hawaiana.jpg",
-    nombre: "Hawaiana",
-    descripcion: "Salsa de tomate, mozzarella, jamón y piña",
-    precio: 28000,
-  },
-  {
-    id: 2,
-    imagen: "pepperoni.jpg",
-    nombre: "Pepperoni",
-    descripcion: "Salsa de tomate, mozzarella y pepperoni",
-    precio: 30000,
-  },
-  {
-    id: 3,
-    imagen: "mexicana.jpg",
-    nombre: "Mexicana",
-    descripcion: "Salsa de tomate, mozzarella, carne molida, fríjol, jalapeño, maíz y cilantro",
-    precio: 34000,
-  },
-  {
-    id: 4,
-    imagen: "carnes.jpg",
-    nombre: "Carnes",
-    descripcion: "Salsa de tomate, mozzarella, carne desmechada, chorizo y tocineta",
-    precio: 36000,
-  },
-  {
-    id: 5,
-    imagen: "costillas.jpg",
-    nombre: "Costillas BBQ",
-    descripcion: "Salsa BBQ, mozzarella, costilla de cerdo desmechada y cebolla morada",
-    precio: 38000,
-  },
-  {
-    id: 6,
-    imagen: "pollo-champinon.jpg",
-    nombre: "Pollo y Champiñón",
-    descripcion: "Salsa de tomate, mozzarella, pollo desmechado y champiñones",
-  },
-])
+const pizzas = ref([])
+const cargando = ref(true)
+const error = ref('')
+
+// Carga las pizzas desde el backend (api/pizzas) usando fetch y async/await.
+async function cargarPizzas() {
+  try{
+    const respuesta = await fetch('/api/pizzas') 
+
+    if(!respuesta.ok){
+      throw new Error('El servidor respondió con error' + respuesta.status)
+    }
+
+    pizzas.value = await respuesta.json()
+  }catch(e){
+    console.error(e)
+    error.value = 'No se pudo cargar el menú. Intenta de nuevo más tarde.'
+  }finally{
+    cargando.value = false // aunque haya error, ya no estamos cargando
+  }
+}
+
+onMounted(() => {
+  cargarPizzas()
+})
 </script>
 
 <template>
   <main class="menu">
     <h1 class="menu__titulo">Menú</h1>
 
-    <div class="menu__grid">
+    <p v-if="cargando">Cargando pizzas...</p>
+    <p v-else-if="error">{{ error }}</p>
+    <div v-else class="menu__grid">
       <!-- v-for recorre el arreglo "pizzas" y crea un <PizzaCard> por cada elemento.
            "pizza in pizzas" nombra "pizza" a cada elemento individual dentro de la vuelta del ciclo.
 

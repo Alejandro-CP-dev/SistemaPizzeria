@@ -19,7 +19,6 @@ function formatearPrecio(precio) {
   // Colombia: separando los miles con punto (32000 -> "32.000"). Luego pegamos el símbolo "$"
   // al inicio para formar el precio final.
   return "$" + precio.toLocaleString("es-CO")
-
 }
 </script>
 
@@ -47,8 +46,7 @@ function formatearPrecio(precio) {
       <p class="pizza-card__descripcion">{{ pizza.descripcion }}</p>
       <!-- Llamamos formatearPrecio directamente aquí, pasándole pizza.precio; Vue ejecuta esta
            función cada vez que el componente se dibuja, no hace falta computed para algo tan simple -->
-      <p v-if="pizza.precio > 0" class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</p>
-      <p v-else class="pizza-card__precio">Precio no disponible</p>
+      <p class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</p>
     </div>
   </div>
 </template>

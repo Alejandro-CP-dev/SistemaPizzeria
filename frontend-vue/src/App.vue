@@ -48,7 +48,6 @@ const pizzas = ref([
     imagen: "pollo-champinon.jpg",
     nombre: "Pollo y Champiñón",
     descripcion: "Salsa de tomate, mozzarella, pollo desmechado y champiñones",
-    precio: 32000,
   },
 ])
 </script>

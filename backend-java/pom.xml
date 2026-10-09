@@ -26,9 +26,19 @@
             <artifactId>gson</artifactId>
             <version>2.14.0</version>
         </dependency>
+        <dependency>
+            <!-- Driver JDBC: es el único que sabe "hablar" el protocolo de MySQL.
+                 Sin él, DriverManager.getConnection(...) no tendría con quién conectarse. -->
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.4.0</version>
+        </dependency>
     </dependencies>
 
      <build>
+        <!-- finalName fija el nombre del .war generado (pizzeria.war).
+             Tomcat usa ese nombre como ruta de la app: http://localhost:8080/pizzeria/... -->
+        <finalName>pizzeria</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

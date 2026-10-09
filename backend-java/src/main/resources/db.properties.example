@@ -1,0 +1,8 @@
+# Plantilla de configuración de MySQL.
+# Copia este archivo como "db.properties" (mismo directorio) y pon tus datos reales.
+# db.properties NO se sube a git (está en .gitignore) porque tiene una contraseña;
+# esta plantilla sí se sube, para que cualquiera sepa qué datos necesita configurar.
+
+db.url=jdbc:mysql://localhost:3306/pizzeria?useSSL=false&serverTimezone=America/Bogota
+db.usuario=root
+db.clave=

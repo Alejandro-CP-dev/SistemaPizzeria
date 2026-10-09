@@ -1,2 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context path="/backend-java"/>
+<!-- Tomcat ignora este atributo "path" cuando despliega el .war automáticamente
+     desde webapps/ (usa el nombre del archivo, ver <finalName> en pom.xml).
+     Se deja en /pizzeria solo para que coincida y no genere confusión. -->
+<Context path="/pizzeria"/>

@@ -5,3 +5,8 @@ nbproject/private/
 .settings/
 .project
 .classpath
+
+# Contiene la contraseña real de MySQL: cada quien pone la suya en su propia
+# máquina. No se sube al repositorio; en su lugar se sube db.properties.example
+# como plantilla sin datos reales.
+src/main/resources/db.properties

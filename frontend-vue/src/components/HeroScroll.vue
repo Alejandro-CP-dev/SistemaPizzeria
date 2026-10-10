@@ -123,6 +123,10 @@ onUnmounted(() => {
 .hero {
   position: relative;
   height: 300vh; /* 3 pantallas de alto: el espacio de scroll donde "vive" la animación */
+  /* El navbar ahora es "sticky" (NavBar.vue) y queda fijo arriba de la pantalla: sin este
+     margen, al hacer clic en "Inicio" el navegador alinearía el borde de esta sección
+     justo con el borde de la ventana, dejándola tapada detrás del navbar. */
+  scroll-margin-top: 80px;
 }
 
 .hero__pin {

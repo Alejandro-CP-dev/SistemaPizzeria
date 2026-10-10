@@ -30,6 +30,9 @@ defineProps({
      de arriba y de las demás secciones claras. */
   background-color: #f3e6dc;
   padding: 5rem 1.5rem 6rem;
+  /* Mismo motivo que en HeroScroll.vue: compensa el navbar "sticky" al saltar aquí
+     desde el enlace "Menú". */
+  scroll-margin-top: 80px;
 }
 
 .menu__encabezado {

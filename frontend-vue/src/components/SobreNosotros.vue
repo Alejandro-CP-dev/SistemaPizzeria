@@ -27,6 +27,9 @@
 .nosotros {
   background-color: #1b110a;
   padding: 7rem 1.5rem;
+  /* Mismo motivo que en HeroScroll.vue: compensa el navbar "sticky" al saltar aquí
+     desde el enlace "Nosotros". */
+  scroll-margin-top: 80px;
 }
 
 .nosotros__contenido {

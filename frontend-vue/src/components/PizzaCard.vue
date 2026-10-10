@@ -10,16 +10,17 @@ defineProps({
 })
 
 // Función normal (no "computed") que recibe el precio, un número entero en pesos (ej: 32000),
-// y devuelve un texto con formato colombiano (ej: "$32.000"). No usamos computed porque computed
-// está pensado para valores que dependen de datos reactivos propios del componente y se
-// recalculan solos cuando esos datos cambian; aquí solo estamos transformando el número que
-// llega por props, así que una función simple alcanza y es más fácil de leer y explicar.
+// y devuelve un texto con formato colombiano (ej: "$32.000"). No hace falta "computed" aquí:
+// las props YA son reactivas por sí solas (si pizza.precio cambia, Vue vuelve a dibujar este
+// componente y esta función se vuelve a ejecutar con el valor nuevo, sin que nadie tenga que
+// avisarle). "computed" solo suma valor cuando el cálculo es caro y conviene guardarlo en
+// caché; aquí es una cuenta trivial, así que una función simple alcanza y es más fácil de
+// explicar en una exposición: "esto es JavaScript normal, no magia de Vue".
 function formatearPrecio(precio) {
   // toLocaleString("es-CO") le pide a JavaScript que escriba el número como se escribe en
   // Colombia: separando los miles con punto (32000 -> "32.000"). Luego pegamos el símbolo "$"
   // al inicio para formar el precio final.
   return "$" + precio.toLocaleString("es-CO")
-
 }
 </script>
 
@@ -35,7 +36,13 @@ function formatearPrecio(precio) {
          lo que está en public/images/pizzas/) con el nombre de archivo que llega en pizza.imagen
          (ej: "hawaiana.jpg"), porque en la base de datos solo se va a guardar ese nombre corto,
          no la ruta completa. -->
+    <!-- Si no hay nombre de imagen (pizza nueva sin foto, o el campo llegó vacío desde la
+         BD), mostramos un recuadro con texto en vez de un <img> roto: un <img> con src
+         vacío o inválido se ve como un ícono de "imagen no encontrada", que no se puede
+         explicar bien en una exposición. -->
+    <div v-if="!pizza.imagen" class="pizza-card__sin-foto">Sin foto</div>
     <img
+      v-else
       :src="`/images/pizzas/${pizza.imagen}`"
       :alt="pizza.nombre"
       class="pizza-card__imagen"
@@ -47,8 +54,7 @@ function formatearPrecio(precio) {
       <p class="pizza-card__descripcion">{{ pizza.descripcion }}</p>
       <!-- Llamamos formatearPrecio directamente aquí, pasándole pizza.precio; Vue ejecuta esta
            función cada vez que el componente se dibuja, no hace falta computed para algo tan simple -->
-      <p v-if="pizza.precio > 0" class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</p>
-      <p v-else class="pizza-card__precio">Precio no disponible</p>
+      <p class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</p>
     </div>
   </div>
 </template>
@@ -71,6 +77,19 @@ function formatearPrecio(precio) {
   height: 140px;
   object-fit: cover; /* llena el cuadro de 140x140 recortando lo que sobre, sin deformar la foto */
   flex-shrink: 0; /* evita que la imagen se achique si la descripción es larga */
+}
+
+.pizza-card__sin-foto {
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #2a170f; /* café: mismo recuadro de 140x140 que ocuparía la foto */
+  color: #fff8f6;
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 .pizza-card__info {

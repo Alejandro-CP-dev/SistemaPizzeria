@@ -48,42 +48,66 @@ async function salir() {
 
 <style scoped>
 .navbar {
+  /* position: sticky + top: 0 lo deja pegado arriba de la pantalla mientras se scrollea
+     el resto de la página, en vez de desaparecer apenas se baja un poco. z-index: 50 lo
+     mantiene por encima del <canvas> de HeroScroll, que también usa "sticky" para fijar
+     la animación de la pizza: sin un z-index más alto aquí, el canvas (que aparece
+     después en el HTML) terminaría pintándose encima del navbar. */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
   display: flex;
   flex-wrap: wrap; /* en pantallas angostas los enlaces pasan a una segunda fila en vez de desbordarse */
   align-items: center;
   gap: 1rem;
-  padding: 0.75rem 1.5rem;
-  background-color: #2a170f; /* café: fondo oscuro para que la barra resalte sobre el resto */
+  padding: 0.85rem 1.5rem;
+  background-color: #1b110a; /* espresso: mismo tono oscuro que ya usa SobreNosotros, para
+                                 que el navbar se sienta parte del mismo sistema visual */
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3); /* le da la sensación de "flotar" sobre el contenido */
 }
 
 .navbar__marca {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #fff8f6;
-  font-weight: bold;
+  gap: 0.6rem;
+  color: #fbf3e7; /* papel: el mismo tono cálido que el texto claro de SobreNosotros */
   text-decoration: none;
   margin-right: auto; /* empuja los enlaces y los botones de sesión hacia la derecha */
+  font-family: 'Marcellus', Georgia, serif;
+  font-size: 1.15rem;
 }
 
 .navbar__logo {
-  height: 32px;
-  width: 32px;
-  object-fit: contain;
+  height: 36px;
+  width: 36px;
+  object-fit: cover;
+  border-radius: 50%; /* foto circular, igual que las fotos de PizzaCard */
+  border: 1.5px solid rgba(166, 37, 24, 0.45); /* mismo anillo rojo tomate tenue que las tarjetas del menú */
 }
 
 .navbar__enlaces {
   display: flex;
-  gap: 1.25rem;
+  gap: 1.9rem;
 }
 
 .navbar__enlaces a {
-  color: #fff8f6;
+  color: rgba(251, 243, 231, 0.65);
   text-decoration: none;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding-bottom: 4px;
+  border-bottom: 1px solid transparent; /* reserva el espacio del subrayado para que el
+                                            texto no "salte" cuando aparece en hover */
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .navbar__enlaces a:hover {
-  color: #a62518; /* rojo tomate: mismo acento que el resto del sitio, al pasar el mouse */
+  color: #fbf3e7;
+  border-bottom-color: #a62518; /* rojo tomate: el mismo acento que usa el resto del sitio */
 }
 
 .navbar__sesion {
@@ -92,13 +116,17 @@ async function salir() {
 }
 
 .navbar__boton {
-  padding: 0.4rem 0.9rem;
-  border-radius: 6px;
-  border: 1px solid #fff8f6;
+  padding: 0.5rem 1.1rem;
+  border-radius: 2px; /* casi recto en vez de pastilla: se siente más de carta fina que de app */
+  border: 1px solid rgba(251, 243, 231, 0.4);
   background-color: transparent;
-  color: #fff8f6;
+  color: #fbf3e7;
   text-decoration: none;
-  font-size: 0.95rem;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 

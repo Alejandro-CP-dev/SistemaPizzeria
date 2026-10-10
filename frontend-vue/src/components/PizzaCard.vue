@@ -1,7 +1,8 @@
 <script setup>
-// defineProps declara qué datos espera recibir este componente desde su "padre" (quien lo use,
-// en este caso App.vue). Es una función especial de Vue que el compilador de <script setup>
-// reconoce automáticamente: no hay que importarla.
+// defineProps declara qué datos espera recibir este componente desde su "padre" (quien lo use:
+// MenuPizzas en el menú público, o PizzaForm en la vista previa de edición). Es una función
+// especial de Vue que el compilador de <script setup> reconoce automáticamente: no hay que
+// importarla.
 // Pedimos UNA sola prop llamada "pizza", de tipo Object, porque viaja toda la información de
 // una pizza (id, imagen, nombre, descripcion, precio) junta dentro de un solo objeto, en vez
 // de mandar cinco props sueltas una por una.
@@ -25,21 +26,11 @@ function formatearPrecio(precio) {
 </script>
 
 <template>
-  <!-- Tarjeta completa de una pizza: foto a la izquierda, texto a la derecha (lo arma el CSS de abajo) -->
+  <!-- Una fila de "carta de restaurante": foto circular pequeña a la izquierda, nombre y
+       precio en la misma línea, descripción en cursiva debajo. -->
   <div class="pizza-card">
-    <!-- :src lleva los dos puntos porque es un "binding" de Vue: así le decimos que el valor de
-         src NO es el texto literal "pizza.imagen", sino el resultado de evaluar esa expresión de
-         JavaScript (el valor real guardado en pizza.imagen). Sin los dos puntos, src sería
-         siempre el texto fijo "pizza.imagen" y el navegador buscaría una imagen con ese nombre
-         literal, que no existe.
-         La ruta final se arma pegando la carpeta fija "/images/pizzas/" (donde Vite publica todo
-         lo que está en public/images/pizzas/) con el nombre de archivo que llega en pizza.imagen
-         (ej: "hawaiana.jpg"), porque en la base de datos solo se va a guardar ese nombre corto,
-         no la ruta completa. -->
     <!-- Si no hay nombre de imagen (pizza nueva sin foto, o el campo llegó vacío desde la
-         BD), mostramos un recuadro con texto en vez de un <img> roto: un <img> con src
-         vacío o inválido se ve como un ícono de "imagen no encontrada", que no se puede
-         explicar bien en una exposición. -->
+         BD), mostramos un recuadro con texto en vez de un <img> roto. -->
     <div v-if="!pizza.imagen" class="pizza-card__sin-foto">Sin foto</div>
     <img
       v-else
@@ -48,13 +39,14 @@ function formatearPrecio(precio) {
       class="pizza-card__imagen"
     />
 
-    <!-- Columna de texto con el nombre, la descripción y el precio -->
     <div class="pizza-card__info">
-      <h3 class="pizza-card__nombre">{{ pizza.nombre }}</h3>
+      <div class="pizza-card__fila">
+        <h3 class="pizza-card__nombre">{{ pizza.nombre }}</h3>
+        <!-- Llamamos formatearPrecio directamente aquí, pasándole pizza.precio; Vue ejecuta esta
+             función cada vez que el componente se dibuja, no hace falta computed para algo tan simple -->
+        <span class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</span>
+      </div>
       <p class="pizza-card__descripcion">{{ pizza.descripcion }}</p>
-      <!-- Llamamos formatearPrecio directamente aquí, pasándole pizza.precio; Vue ejecuta esta
-           función cada vez que el componente se dibuja, no hace falta computed para algo tan simple -->
-      <p class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</p>
     </div>
   </div>
 </template>
@@ -64,58 +56,73 @@ function formatearPrecio(precio) {
    tarjeta no choque por accidente con el CSS de otra parte de la página */
 
 .pizza-card {
-  display: flex; /* fila: la imagen queda a la izquierda y la info a la derecha */
-  gap: 1rem;
-  background-color: #fff8f6; /* crema: fondo de la tarjeta */
-  border-radius: 12px;
-  overflow: hidden; /* recorta la imagen para que no se salga de las esquinas redondeadas */
-  box-shadow: 0 2px 8px rgba(42, 23, 15, 0.15); /* sombra suave usando el café con transparencia */
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.35rem 0;
+  /* Línea delgada entre pizzas, como los renglones de una carta impresa, en vez de cada
+     pizza metida en su propia caja con sombra. */
+  border-bottom: 1px solid rgba(42, 23, 15, 0.09);
 }
 
-.pizza-card__imagen {
-  width: 140px;
-  height: 140px;
-  object-fit: cover; /* llena el cuadro de 140x140 recortando lo que sobre, sin deformar la foto */
-  flex-shrink: 0; /* evita que la imagen se achique si la descripción es larga */
+.pizza-card__imagen,
+.pizza-card__sin-foto {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%; /* foto circular: el detalle que le da el aire de "carta elegante" a la fila */
+  object-fit: cover;
+  flex-shrink: 0;
+  /* Anillo delgado en rojo tomate al 30% de opacidad: marca la identidad de la marca sin
+     ponerle un círculo de color grueso detrás, que se vería más "app" que "restaurante". */
+  border: 1.5px solid rgba(166, 37, 24, 0.3);
 }
 
 .pizza-card__sin-foto {
-  width: 140px;
-  height: 140px;
-  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #2a170f; /* café: mismo recuadro de 140x140 que ocuparía la foto */
+  background-color: #2a170f; /* café */
   color: #fff8f6;
-  font-size: 0.85rem;
+  font-size: 0.6rem;
   text-align: center;
 }
 
 .pizza-card__info {
+  flex: 1;
+  min-width: 0; /* permite que pizza-card__descripcion pueda encogerse en vez de desbordar */
+}
+
+.pizza-card__fila {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 0.75rem 1rem 0.75rem 0;
-  gap: 0.35rem;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
 }
 
 .pizza-card__nombre {
   margin: 0;
-  color: #a62518; /* rojo tomate: resalta el nombre de la pizza */
-  font-size: 1.1rem;
-}
-
-.pizza-card__descripcion {
-  margin: 0;
-  color: #2a170f; /* café: texto normal de la descripción */
-  font-size: 0.9rem;
-  line-height: 1.3;
+  font-family: 'Marcellus', Georgia, serif;
+  font-weight: 400;
+  font-size: 1.25rem;
+  color: #2a170f; /* café: antes el nombre iba en rojo tomate, ahora ese rojo se reserva para
+                      detalles pequeños (el anillo de la foto) y el nombre lee como texto fino */
 }
 
 .pizza-card__precio {
-  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 1.15rem;
   color: #2a6a48; /* verde albahaca: distingue el precio del resto del texto */
-  font-weight: bold;
+  white-space: nowrap;
+}
+
+.pizza-card__descripcion {
+  margin: 0.4rem 0 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #7a5b4c; /* café suave: un tono más claro que el café de texto principal, para que la
+                      descripción quede claramente por debajo del nombre en importancia */
 }
 </style>

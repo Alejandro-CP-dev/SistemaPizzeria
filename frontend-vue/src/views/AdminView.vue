@@ -128,21 +128,27 @@ async function eliminarConfirmado() {
 <template>
   <section class="admin">
     <div class="admin__encabezado">
-      <h1>Panel de administración</h1>
-      <button type="button" class="admin__agregar" @click="abrirCrear">Agregar pizza</button>
+      <div>
+        <p class="admin__ojo">Gestión de la carta</p>
+        <h1 class="admin__titulo">Panel de administración</h1>
+        <div class="admin__linea"></div>
+      </div>
+      <button type="button" class="admin__agregar" @click="abrirCrear">+ Agregar pizza</button>
     </div>
 
-    <p v-if="mensaje" class="admin__mensaje">{{ mensaje }}</p>
-    <p v-if="error" class="admin__error">{{ error }}</p>
+    <p v-if="mensaje" class="admin__aviso admin__aviso--exito">{{ mensaje }}</p>
+    <p v-if="error" class="admin__aviso admin__aviso--error">{{ error }}</p>
 
-    <p v-if="cargando">Cargando pizzas...</p>
-    <PizzaTabla
-      v-else
-      :pizzas="pizzas"
-      @editar="abrirEditar"
-      @eliminar="pedirEliminar"
-      @agregar="abrirCrear"
-    />
+    <div class="admin__carta">
+      <p v-if="cargando" class="admin__cargando">Cargando pizzas...</p>
+      <PizzaTabla
+        v-else
+        :pizzas="pizzas"
+        @editar="abrirEditar"
+        @eliminar="pedirEliminar"
+        @agregar="abrirCrear"
+      />
+    </div>
 
     <!-- v-if (no v-show) a propósito: así cada vez que se abre el formulario es un
          PizzaForm NUEVO, que arranca su copia local desde cero a partir de la prop
@@ -170,46 +176,99 @@ async function eliminarConfirmado() {
 
 <style scoped>
 .admin {
-  max-width: 1100px;
+  min-height: 100vh;
+  background-color: #f3e6dc;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 3rem 1.5rem 4rem;
 }
 
 .admin__encabezado {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
-.admin__encabezado h1 {
+.admin__ojo {
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
   color: #a62518;
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+}
+
+.admin__titulo {
+  font-family: 'Marcellus', Georgia, serif;
+  font-weight: 400;
+  font-size: 2.1rem;
+  color: #2a170f;
   margin: 0;
 }
 
-.admin__agregar {
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 6px;
-  background-color: #2a6a48;
-  color: #fff8f6;
-  cursor: pointer;
-}
-
-.admin__mensaje {
-  background-color: #2a6a48;
-  color: #fff8f6;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-}
-
-.admin__error {
+.admin__linea {
+  width: 56px;
+  height: 1px;
   background-color: #a62518;
-  color: #fff8f6;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  margin-top: 1.1rem;
+}
+
+.admin__agregar {
+  padding: 0.7rem 1.4rem;
+  border: none;
+  border-radius: 2px;
+  background-color: #a62518;
+  color: #fbf3e7;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.admin__agregar:hover {
+  background-color: #8a1f15;
+}
+
+.admin__aviso {
+  margin: 0 0 1.5rem;
+  padding: 0.65rem 1rem;
+  border-left: 3px solid;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.admin__aviso--exito {
+  border-color: #2a6a48;
+  background-color: rgba(42, 106, 72, 0.08);
+  color: #2a6a48;
+}
+
+.admin__aviso--error {
+  border-color: #a62518;
+  background-color: rgba(166, 37, 24, 0.08);
+  color: #a62518;
+}
+
+.admin__carta {
+  background-color: #fff8f6;
+  border-radius: 4px;
+  padding: 1.75rem;
+  box-shadow: 0 2px 20px rgba(42, 23, 15, 0.08);
+}
+
+.admin__cargando {
+  margin: 0;
+  padding: 2rem 0;
+  text-align: center;
+  color: #7a5b4c;
+  font-family: 'Figtree', system-ui, sans-serif;
 }
 
 .admin__modal {
@@ -218,7 +277,7 @@ async function eliminarConfirmado() {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(42, 23, 15, 0.6);
+  background-color: rgba(27, 17, 10, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -229,8 +288,8 @@ async function eliminarConfirmado() {
 
 .admin__modal-contenido {
   background-color: #fff8f6;
-  border-radius: 12px;
-  padding: 1.5rem;
+  border-radius: 4px;
+  padding: 2rem;
   max-width: 700px;
   width: 100%;
 }

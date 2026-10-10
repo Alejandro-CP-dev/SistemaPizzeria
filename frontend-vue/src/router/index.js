@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import InicioView from '../views/InicioView.vue'
 import LoginView from '../views/LoginView.vue'
 import AdminView from '../views/AdminView.vue'
+import { usuario, verificarSesion } from '../sesion.js'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -24,6 +25,29 @@ const router = createRouter({
     }
     return { top: 0 }
   },
+})
+
+// beforeEach se ejecuta ANTES de dibujar cualquier ruta nueva. Si la ruta de destino
+// no pidió sesión (meta.requiereSesion no existe), lo dejamos pasar de inmediato.
+router.beforeEach(async (hacia) => {
+  if (!hacia.meta.requiereSesion) {
+    return true
+  }
+
+  // Se vuelve a preguntar al backend aunque "usuario" ya tenga un valor: es la única
+  // forma de que esto siga funcionando después de recargar la página con F5. Al recargar,
+  // TODO el JavaScript (incluido este módulo) se reinicia desde cero y "usuario" vuelve
+  // a valer null, aunque la cookie de sesión del navegador siga viva.
+  await verificarSesion()
+
+  // Importante: este guard es solo comodidad para la interfaz (evita mostrar el panel un
+  // instante para luego sacar al usuario). La seguridad real está en el backend: si
+  // alguien se lo saltara editando el JavaScript del navegador, PizzaServlet seguiría
+  // respondiendo 401 a cualquier POST/PUT/DELETE sin sesión válida.
+  if (!usuario.value) {
+    return '/login'
+  }
+  return true
 })
 
 export default router

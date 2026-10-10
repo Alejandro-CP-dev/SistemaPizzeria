@@ -3,6 +3,13 @@
 # db.properties NO se sube a git (está en .gitignore) porque tiene una contraseña;
 # esta plantilla sí se sube, para que cualquiera sepa qué datos necesita configurar.
 
-db.url=jdbc:mysql://localhost:3306/pizzeria?useSSL=false&serverTimezone=America/Bogota
+# connectTimeout=5000 limita a 5 segundos cuánto espera el driver a que MySQL responda
+# al intentar conectarse. Sin este límite, si MySQL está apagado, atascado a medio
+# arrancar, o bloqueado por el firewall, DriverManager.getConnection() (en Conexion.java)
+# se queda esperando indefinidamente: la petición HTTP nunca recibe respuesta ni error,
+# y en el navegador se ve como un "loop" infinito de carga en vez de un mensaje de error
+# claro. Con el timeout, en cambio, se lanza una SQLException rápido y PizzaServlet
+# puede responder 500 enseguida.
+db.url=jdbc:mysql://localhost:3306/pizzeria?useSSL=false&serverTimezone=America/Bogota&connectTimeout=5000
 db.usuario=root
 db.clave=

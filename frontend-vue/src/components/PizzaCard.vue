@@ -3,11 +3,16 @@
 // MenuPizzas en el menú público, o PizzaForm en la vista previa de edición). Es una función
 // especial de Vue que el compilador de <script setup> reconoce automáticamente: no hay que
 // importarla.
-// Pedimos UNA sola prop llamada "pizza", de tipo Object, porque viaja toda la información de
-// una pizza (id, imagen, nombre, descripcion, precio) junta dentro de un solo objeto, en vez
-// de mandar cinco props sueltas una por una.
 defineProps({
+  // Toda la información de una pizza (id, imagen, nombre, descripcion, precio) junta en un
+  // solo objeto, en vez de mandar cinco props sueltas una por una.
   pizza: Object,
+  // "invertido" decide de qué lado va la foto: MenuPizzas se lo pasa como true en las filas
+  // pares (índice 1, 3, 5...) para que el menú quede en bandas alternadas (foto-texto,
+  // texto-foto, foto-texto...) en vez de todas las filas iguales. Por defecto es false:
+  // quien use PizzaCard sin pasar esta prop (como PizzaForm, que solo necesita una vista
+  // previa normal) no tiene que preocuparse por ella.
+  invertido: { type: Boolean, default: false },
 })
 
 // Función normal (no "computed") que recibe el precio, un número entero en pesos (ej: 32000),
@@ -26,55 +31,66 @@ function formatearPrecio(precio) {
 </script>
 
 <template>
-  <!-- Una fila de "carta de restaurante": foto circular pequeña a la izquierda, nombre y
-       precio en la misma línea, descripción en cursiva debajo. -->
-  <div class="pizza-card">
-    <!-- Si no hay nombre de imagen (pizza nueva sin foto, o el campo llegó vacío desde la
-         BD), mostramos un recuadro con texto en vez de un <img> roto. -->
-    <div v-if="!pizza.imagen" class="pizza-card__sin-foto">Sin foto</div>
-    <img
-      v-else
-      :src="`/images/pizzas/${pizza.imagen}`"
-      :alt="pizza.nombre"
-      class="pizza-card__imagen"
-    />
+  <!-- :class con un objeto {nombre: condición} agrega "pizza-card--invertido" solo cuando
+       "invertido" es true; es la forma estándar de Vue para activar una clase de CSS según
+       una condición, en vez de armar el texto de la clase a mano con un ternario. -->
+  <div class="pizza-card" :class="{ 'pizza-card--invertido': invertido }">
+    <div class="pizza-card__aro">
+      <!-- Si no hay nombre de imagen (pizza nueva sin foto, o el campo llegó vacío desde la
+           BD), mostramos un recuadro con texto en vez de un <img> roto. -->
+      <div v-if="!pizza.imagen" class="pizza-card__sin-foto">Sin foto</div>
+      <img
+        v-else
+        :src="`/images/pizzas/${pizza.imagen}`"
+        :alt="pizza.nombre"
+        class="pizza-card__imagen"
+      />
+    </div>
 
     <div class="pizza-card__info">
-      <div class="pizza-card__fila">
-        <h3 class="pizza-card__nombre">{{ pizza.nombre }}</h3>
-        <!-- Llamamos formatearPrecio directamente aquí, pasándole pizza.precio; Vue ejecuta esta
-             función cada vez que el componente se dibuja, no hace falta computed para algo tan simple -->
-        <span class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</span>
-      </div>
+      <span class="pizza-card__nombre">{{ pizza.nombre }}</span>
       <p class="pizza-card__descripcion">{{ pizza.descripcion }}</p>
+      <!-- Llamamos formatearPrecio directamente aquí, pasándole pizza.precio; Vue ejecuta esta
+           función cada vez que el componente se dibuja, no hace falta computed para algo tan simple -->
+      <span class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</span>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* "scoped" hace que estas reglas solo apliquen a este componente, para que el CSS de una
-   tarjeta no choque por accidente con el CSS de otra parte de la página */
-
 .pizza-card {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1.5rem;
-  padding: 1.35rem 0;
-  /* Línea delgada entre pizzas, como los renglones de una carta impresa, en vez de cada
-     pizza metida en su propia caja con sombra. */
-  border-bottom: 1px solid rgba(42, 23, 15, 0.09);
+  gap: 2rem;
+}
+
+/* row-reverse intercambia el orden visual de los dos hijos (el aro con la foto y el bloque
+   de texto) sin tocar el HTML: es la misma estructura, solo se dibuja al revés. */
+.pizza-card--invertido {
+  flex-direction: row-reverse;
+}
+
+.pizza-card--invertido .pizza-card__info {
+  text-align: right;
+}
+
+.pizza-card__aro {
+  flex-shrink: 0;
+  width: 170px;
+  height: 170px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background-color: #a62518; /* rojo tomate: el "aro" grueso alrededor de la foto */
+  padding: 8px; /* este padding es justamente lo que deja ver el aro rojo detrás de la foto */
 }
 
 .pizza-card__imagen,
 .pizza-card__sin-foto {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%; /* foto circular: el detalle que le da el aire de "carta elegante" a la fila */
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
   object-fit: cover;
-  flex-shrink: 0;
-  /* Anillo delgado en rojo tomate al 30% de opacidad: marca la identidad de la marca sin
-     ponerle un círculo de color grueso detrás, que se vería más "app" que "restaurante". */
-  border: 1.5px solid rgba(166, 37, 24, 0.3);
 }
 
 .pizza-card__sin-foto {
@@ -83,46 +99,58 @@ function formatearPrecio(precio) {
   justify-content: center;
   background-color: #2a170f; /* café */
   color: #fff8f6;
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   text-align: center;
 }
 
 .pizza-card__info {
-  flex: 1;
-  min-width: 0; /* permite que pizza-card__descripcion pueda encogerse en vez de desbordar */
-}
-
-.pizza-card__fila {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
+  flex: 1 1 280px;
+  min-width: 240px;
 }
 
 .pizza-card__nombre {
-  margin: 0;
-  font-family: 'Marcellus', Georgia, serif;
-  font-weight: 400;
-  font-size: 1.25rem;
-  color: #2a170f; /* café: antes el nombre iba en rojo tomate, ahora ese rojo se reserva para
-                      detalles pequeños (el anillo de la foto) y el nombre lee como texto fino */
-}
-
-.pizza-card__precio {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 600;
+  display: inline-block;
+  background-color: #a62518;
+  color: #fbf3e7; /* papel: mismo tono cálido que el resto de la página */
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 700;
   font-size: 1.15rem;
-  color: #2a6a48; /* verde albahaca: distingue el precio del resto del texto */
-  white-space: nowrap;
+  padding: 0.55rem 1.4rem;
+  border-radius: 999px;
 }
 
 .pizza-card__descripcion {
-  margin: 0.4rem 0 0;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-style: italic;
+  font-family: 'Figtree', system-ui, sans-serif;
   font-size: 0.95rem;
-  line-height: 1.5;
-  color: #7a5b4c; /* café suave: un tono más claro que el café de texto principal, para que la
-                      descripción quede claramente por debajo del nombre en importancia */
+  line-height: 1.6;
+  color: #7a5b4c; /* café suave: texto secundario, menos protagonista que el nombre */
+  margin: 0.9rem 0 0;
+}
+
+.pizza-card__precio {
+  display: inline-block;
+  margin-top: 0.7rem;
+  background-color: #e3eee7; /* verde albahaca muy tenue, de fondo */
+  color: #2a6a48; /* verde albahaca: distingue el precio del resto del texto */
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+}
+
+/* En pantallas angostas no alcanza el espacio para foto + texto lado a lado: todo pasa a una
+   sola columna centrada, sin importar si la fila era "invertida" o no (invertir el orden ya
+   no tiene sentido visual cuando todo está apilado). */
+@media (max-width: 560px) {
+  .pizza-card,
+  .pizza-card--invertido {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .pizza-card--invertido .pizza-card__info {
+    text-align: center;
+  }
 }
 </style>

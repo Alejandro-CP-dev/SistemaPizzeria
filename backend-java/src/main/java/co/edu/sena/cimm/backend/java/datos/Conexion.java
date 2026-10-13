@@ -57,4 +57,15 @@ public class Conexion {
         String clave = PROPIEDADES.getProperty("db.clave");
         return DriverManager.getConnection(url, usuario, clave);
     }
+
+    /**
+     * db.properties también guarda, además de los datos de MySQL, la ruta donde
+     * ImagenServlet debe escribir las fotos que suben los administradores (ver
+     * "imagenes.directorio" en db.properties.example). Se expone este getter
+     * genérico en vez de crear otro cargador de properties solo para esa única
+     * propiedad: el archivo y la carga ya existen aquí, no hay que repetirlos.
+     */
+    public static String propiedad(String nombre) {
+        return PROPIEDADES.getProperty(nombre);
+    }
 }

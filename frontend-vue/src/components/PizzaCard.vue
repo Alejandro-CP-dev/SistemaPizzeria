@@ -36,12 +36,16 @@ function formatearPrecio(precio) {
        una condición, en vez de armar el texto de la clase a mano con un ternario. -->
   <div class="pizza-card" :class="{ 'pizza-card--invertido': invertido }">
     <div class="pizza-card__foto">
-      <!-- Si no hay nombre de imagen (pizza nueva sin foto, o el campo llegó vacío desde la
-           BD), mostramos un recuadro con texto en vez de un <img> roto. -->
-      <div v-if="!pizza.imagen" class="pizza-card__sin-foto">Sin foto</div>
+      <!-- Si no hay ni nombre de imagen NI vista previa (pizza nueva sin foto, o el campo
+           llegó vacío desde la BD), mostramos un recuadro con texto en vez de un <img> roto.
+           "imagenVistaPrevia" no es un campo real de la tabla Pizza: PizzaForm.vue lo agrega
+           SOLO en su copia local, con la URL temporal (blob:...) de la foto que la persona
+           acaba de elegir en su computador, para poder mostrarla aquí antes de que exista en
+           el servidor. Por eso se revisa primero: si está presente, gana sobre "imagen". -->
+      <div v-if="!pizza.imagen && !pizza.imagenVistaPrevia" class="pizza-card__sin-foto">Sin foto</div>
       <img
         v-else
-        :src="`/images/pizzas/${pizza.imagen}`"
+        :src="pizza.imagenVistaPrevia || `/images/pizzas/${pizza.imagen}`"
         :alt="pizza.nombre"
         class="pizza-card__imagen"
       />

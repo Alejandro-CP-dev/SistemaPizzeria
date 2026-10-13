@@ -21,7 +21,7 @@ async function salir() {
          /admin, primero navega a "/" y, apenas llega, baja hasta la sección. Es el mismo
          link para los dos casos: no hace falta ninguna lógica especial para distinguirlos. -->
     <RouterLink :to="{ path: '/', hash: '#inicio' }" class="navbar__marca">
-      <img src="/images/logo-png.png" alt="Logo Sistema Pizzería" class="navbar__logo" />
+      <img src="/images/logo-fondo.png" alt="Logo Sistema Pizzería" class="navbar__logo" />
       <span>Pizzería Sogamoso</span>
     </RouterLink>
 

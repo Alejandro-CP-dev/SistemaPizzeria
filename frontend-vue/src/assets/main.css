@@ -12,3 +12,31 @@
 body {
   margin: 0;
 }
+
+/*
+ * Clase de los íconos "Material Symbols Outlined" (edit, delete, search, logout...) que
+ * usa el panel de administración. Vive aquí, en el CSS global, y no dentro de un
+ * <style scoped> de algún componente, porque varios componentes del panel (AdminHeader,
+ * PizzaTabla, PizzaForm, ModalConfirmar...) escriben <span class="material-symbols-outlined">
+ * en su propio template. El "scoped" de Vue le agrega a cada componente una marca interna
+ * (data-v-xxxx) que separa sus estilos de los de cualquier otro: una regla .material-symbols-outlined
+ * escrita dentro de un componente con <style scoped> SOLO pintaría los íconos de ESE
+ * componente, no los de los demás. Puesta aquí, en el CSS que main.js carga una sola vez
+ * para toda la aplicación, la regla aplica igual sin importar qué componente use la clase.
+ */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}

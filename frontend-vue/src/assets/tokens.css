@@ -1,0 +1,161 @@
+/*
+ * tokens.css — variables de diseño del PANEL DE ADMINISTRACIÓN.
+ *
+ * Por qué existe: el diseño de referencia (frontend-vue/docs/diseno-admin-stitch.html)
+ * define sus colores, espaciados y tipografías UNA VEZ, dentro de un tailwind.config, y
+ * cada elemento del HTML solo los referencia por nombre (ej. "bg-primary"). Aquí se hace
+ * exactamente lo mismo pero con CSS normal: cada valor se escribe UNA sola vez (abajo) y
+ * cada componente lo usa con var(--primary). La ventaja para una exposición es concreta:
+ * si mañana la pizzería cambia su color de marca, se edita una sola línea en este archivo
+ * y los 7 componentes del panel cambian solos, en vez de buscar "#a62518" a mano en cada
+ * <style> (y arriesgarse a dejar alguno olvidado).
+ *
+ * Los nombres de las variables son los mismos "roles" de color que trae el diseño
+ * (primary, on-primary, surface-container-low, etc.): así, al comparar este archivo con
+ * el tailwind.config del HTML de referencia, la traducción es directa, no hay que adivinar
+ * a qué corresponde cada uno.
+ */
+
+:root {
+  /* ---- Colores: superficie y texto base ---- */
+  --background: #fff8f6;
+  --surface: #fff8f6;
+  --surface-bright: #fff8f6;
+  --surface-dim: #f8d2c4;
+  --surface-tint: #b02d1e;
+  --surface-variant: #ffdbce;
+  --on-background: #2a170f;
+  --on-surface: #2a170f;
+  --on-surface-variant: #59413d;
+
+  /* Capas de superficie: de más clara (lowest) a más oscura (highest). El diseño las usa
+     para "apilar" tarjetas sobre fondos sin depender de sombras: la tabla, el panel del
+     formulario y la fila en edición son 3 de estas capas distintas. */
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #fff1ec;
+  --surface-container: #ffe9e2;
+  --surface-container-high: #ffe2d8;
+  --surface-container-highest: #ffdbce;
+
+  --inverse-surface: #422b22;
+  --inverse-on-surface: #ffede7;
+
+  --outline: #8d706c;
+  --outline-variant: #e1bfb9;
+
+  /* ---- Color de marca (rojo tomate) ---- */
+  --primary: #a62518;
+  --on-primary: #ffffff;
+  --primary-container: #c83e2d;
+  --on-primary-container: #fff1ee;
+  --primary-fixed: #ffdad4;
+  --primary-fixed-dim: #ffb4a8;
+  --on-primary-fixed: #410100;
+  --on-primary-fixed-variant: #8e1308;
+  --inverse-primary: #ffb4a8;
+
+  /* ---- Color secundario (verde albahaca): éxito, precios, disponibilidad ---- */
+  --secondary: #2a6a48;
+  --on-secondary: #ffffff;
+  --secondary-container: #aceec4;
+  --on-secondary-container: #2f6e4c;
+  --secondary-fixed: #aff1c6;
+  --secondary-fixed-dim: #93d5ac;
+  --on-secondary-fixed: #002111;
+  --on-secondary-fixed-variant: #0a5132;
+
+  /* ---- Color terciario (dorado/horno): moneda, horno de leña ---- */
+  --tertiary: #764f00;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #946610;
+  --on-tertiary-container: #fff1e2;
+  --tertiary-fixed: #ffddaf;
+  --tertiary-fixed-dim: #f6bd62;
+  --on-tertiary-fixed: #281800;
+  --on-tertiary-fixed-variant: #614000;
+
+  /* ---- Error (eliminar, validación) ---- */
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+
+  /* ---- Radios: de "casi recto" a "pastilla" ---- */
+  --radius: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* ---- Espaciados ---- */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --gutter: 1.25rem; /* separación entre la tabla y el panel del formulario */
+  --gutter-mobile: 0.75rem;
+  --margin: 1.75rem; /* margen izquierdo/derecho del contenido en pantallas grandes */
+  --margin-mobile: 1rem;
+
+  /* ---- Familias tipográficas ---- */
+  --font-headline: 'Merriweather', Georgia, serif; /* títulos: Gestión de pizzas, nombre de la pizza... */
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif; /* todo lo demás: texto, botones, tabla */
+
+  /*
+   * Escala tipográfica: cada "tamaño" del diseño (headline-lg, body-sm, label-md...) se
+   * guarda como 3 variables (tamaño, interlineado, peso) para no perder ningún dato del
+   * tailwind.config original. Se usan juntas en cada componente, por ejemplo:
+   *   font: var(--fw-headline-sm) var(--fs-headline-sm)/var(--lh-headline-sm) var(--font-headline);
+   */
+  --fs-headline-xl: 36px;
+  --lh-headline-xl: 44px;
+  --fw-headline-xl: 700;
+
+  --fs-headline-xl-mobile: 28px;
+  --lh-headline-xl-mobile: 36px;
+  --fw-headline-xl-mobile: 700;
+
+  --fs-headline-lg: 28px;
+  --lh-headline-lg: 36px;
+  --fw-headline-lg: 700;
+
+  --fs-headline-lg-mobile: 22px;
+  --lh-headline-lg-mobile: 30px;
+  --fw-headline-lg-mobile: 700;
+
+  --fs-headline-md: 22px;
+  --lh-headline-md: 30px;
+  --fw-headline-md: 700;
+
+  --fs-headline-sm: 18px;
+  --lh-headline-sm: 26px;
+  --fw-headline-sm: 700;
+
+  --fs-body-lg: 16px;
+  --lh-body-lg: 24px;
+  --fw-body-lg: 400;
+
+  --fs-body-md: 14px;
+  --lh-body-md: 20px;
+  --fw-body-md: 400;
+
+  --fs-body-sm: 12px;
+  --lh-body-sm: 16px;
+  --fw-body-sm: 400;
+
+  --fs-label-lg: 14px;
+  --lh-label-lg: 20px;
+  --fw-label-lg: 600;
+
+  --fs-label-md: 12px;
+  --lh-label-md: 16px;
+  --fw-label-md: 600;
+
+  --fs-label-sm: 10px;
+  --lh-label-sm: 14px;
+  --fw-label-sm: 700;
+
+  --fs-metric-num: 24px;
+  --lh-metric-num: 28px;
+  --fw-metric-num: 700;
+}

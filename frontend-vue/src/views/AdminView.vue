@@ -1,20 +1,25 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import AdminHeader from '../components/AdminHeader.vue'
+import AdminFooter from '../components/AdminFooter.vue'
 import PizzaTabla from '../components/PizzaTabla.vue'
 import PizzaForm from '../components/PizzaForm.vue'
 import ModalConfirmar from '../components/ModalConfirmar.vue'
+import NotificacionToast from '../components/NotificacionToast.vue'
 
 const router = useRouter()
 
 const pizzas = ref([])
 const cargando = ref(true)
 const error = ref('')
-const mensaje = ref('') // mensaje corto de éxito, se borra solo (ver avisar())
+const mensaje = ref('') // texto del toast de éxito; '' = no se muestra (ver NotificacionToast)
 
-// null -> el formulario está cerrado. "nueva" -> abierto para crear.
-// Un objeto pizza -> abierto para editar esa pizza.
-const formularioAbierto = ref(null)
+// null -> el panel de la derecha está en modo "nueva pizza". Un objeto -> está editando
+// esa pizza. A diferencia de la versión anterior (formularioAbierto + un modal), el
+// panel del diseño de referencia NUNCA se oculta: siempre hay un formulario visible,
+// solo cambia si es de alta o de edición.
+const pizzaSeleccionada = ref(null)
 const pizzaAEliminar = ref(null)
 
 async function cargarPizzas() {
@@ -37,20 +42,12 @@ onMounted(() => {
   cargarPizzas()
 })
 
-/** Muestra "texto" un momento y luego lo borra solo, sin que el usuario tenga que cerrarlo. */
-function avisar(texto) {
-  mensaje.value = texto
-  setTimeout(() => {
-    mensaje.value = ''
-  }, 2500)
-}
-
 function abrirCrear() {
-  formularioAbierto.value = 'nueva'
+  pizzaSeleccionada.value = null
 }
 
 function abrirEditar(pizza) {
-  formularioAbierto.value = pizza
+  pizzaSeleccionada.value = pizza
 }
 
 /**
@@ -93,8 +90,8 @@ async function guardarPizza(datos) {
       pizzas.value.push(pizzaGuardada)
     }
 
-    formularioAbierto.value = null
-    avisar(esEdicion ? 'Pizza actualizada' : 'Pizza guardada')
+    pizzaSeleccionada.value = null // vuelve a modo "nueva pizza" y quita el resaltado de la tabla
+    mensaje.value = esEdicion ? 'Pizza actualizada correctamente' : 'Pizza guardada correctamente'
   } catch (e) {
     console.error(e)
     error.value = 'No se pudo conectar con el servidor.'
@@ -117,59 +114,99 @@ async function eliminarConfirmado() {
       return
     }
     pizzas.value = pizzas.value.filter((p) => p.id !== pizza.id)
-    avisar('Pizza eliminada')
+    // Si justo se estaba editando la pizza que se acaba de eliminar, el panel se queda
+    // sin con qué trabajar: se vuelve a modo "nueva pizza" para no dejarlo editando un
+    // registro que ya no existe.
+    if (pizzaSeleccionada.value && pizzaSeleccionada.value.id === pizza.id) {
+      pizzaSeleccionada.value = null
+    }
+    mensaje.value = 'Pizza eliminada'
   } catch (e) {
     console.error(e)
     error.value = 'No se pudo conectar con el servidor.'
   }
 }
+
+const textoConteo = computed(() => {
+  const cantidad = pizzas.value.length
+  return `${cantidad} ${cantidad === 1 ? 'pizza' : 'pizzas'} en el menú`
+})
 </script>
 
 <template>
-  <section class="admin">
-    <div class="admin__encabezado">
-      <div>
-        <p class="admin__ojo">Gestión de la carta</p>
-        <h1 class="admin__titulo">Panel de administración</h1>
-        <div class="admin__linea"></div>
+  <div class="admin-pagina">
+    <AdminHeader />
+
+    <main class="admin">
+      <div class="admin__contenido">
+        <p v-if="error" class="admin__error">{{ error }}</p>
+
+        <!-- Encabezado de la sección: ícono, título, insignia con el conteo real y el
+             punto verde animado, texto descriptivo, píldora de moneda y botón de alta. -->
+        <div class="admin__seccion-encabezado">
+          <div class="admin__seccion-titulo-bloque">
+            <div class="admin__seccion-icono">
+              <span class="material-symbols-outlined">local_pizza</span>
+            </div>
+            <div class="admin__seccion-textos">
+              <div class="admin__seccion-titulo-fila">
+                <h1 class="admin__seccion-titulo">Gestión de pizzas</h1>
+                <span class="admin__insignia-conteo">
+                  <span class="admin__punto-animado"></span>
+                  {{ textoConteo }}
+                </span>
+              </div>
+              <p class="admin__seccion-descripcion">
+                Control artesanal de recetas, precios al consumidor en pesos colombianos y
+                fichas de menú.
+              </p>
+            </div>
+          </div>
+
+          <div class="admin__seccion-acciones">
+            <span class="admin__moneda">
+              <span class="material-symbols-outlined">monetization_on</span>
+              <span>Moneda: COP (Sin decimales)</span>
+            </span>
+            <button type="button" class="admin__agregar" @click="abrirCrear">
+              <span class="material-symbols-outlined">add</span>
+              <span>Agregar pizza</span>
+            </button>
+          </div>
+        </div>
+
+        <p v-if="cargando" class="admin__cargando">Cargando pizzas...</p>
+
+        <!-- Distribución 7/12 (tabla) + 5/12 (formulario + vista previa) en pantalla
+             grande; en celular, una sola columna (ver <style>). -->
+        <div v-else class="admin__grid">
+          <div class="admin__grid-tabla">
+            <PizzaTabla
+              :pizzas="pizzas"
+              :id-editando="pizzaSeleccionada ? pizzaSeleccionada.id : null"
+              @editar="abrirEditar"
+              @eliminar="pedirEliminar"
+              @agregar="abrirCrear"
+            />
+          </div>
+
+          <!-- :key fuerza a Vue a destruir y volver a crear PizzaForm cada vez que cambia
+               qué se está editando (o se vuelve a modo "nueva pizza"): así su copia local
+               (ver PizzaForm.vue) siempre arranca fresca a partir de la prop "pizza" que
+               le toque en ese momento, sin necesitar un watcher manual. -->
+          <div class="admin__grid-form">
+            <PizzaForm
+              :key="pizzaSeleccionada ? pizzaSeleccionada.id : 'nueva'"
+              :pizza="pizzaSeleccionada"
+              @guardar="guardarPizza"
+              @cancelar="pizzaSeleccionada = null"
+            />
+          </div>
+        </div>
       </div>
-      <button type="button" class="admin__agregar" @click="abrirCrear">+ Agregar pizza</button>
-    </div>
+    </main>
 
-    <p v-if="error" class="admin__aviso admin__aviso--error">{{ error }}</p>
-
-    <!-- Toast flotante en vez de un bloque fijo en el flujo: "mensaje" ya se borra
-         solo a los 2.5s (ver avisar() en el script), así que no necesita ocupar
-         espacio permanente ni empujar el resto del panel hacia abajo. -->
-    <Transition name="admin__toast-transicion">
-      <p v-if="mensaje" class="admin__toast">{{ mensaje }}</p>
-    </Transition>
-
-    <div class="admin__carta">
-      <p v-if="cargando" class="admin__cargando">Cargando pizzas...</p>
-      <PizzaTabla
-        v-else
-        :pizzas="pizzas"
-        @editar="abrirEditar"
-        @eliminar="pedirEliminar"
-        @agregar="abrirCrear"
-      />
-    </div>
-
-    <!-- v-if (no v-show) a propósito: así cada vez que se abre el formulario es un
-         PizzaForm NUEVO, que arranca su copia local desde cero a partir de la prop
-         "pizza" que le llegue en ese momento (null para crear, el objeto para editar).
-         Si se reutilizara la misma instancia, habría que vigilar manualmente cuándo
-         cambia la prop para resetear su estado interno. -->
-    <div v-if="formularioAbierto" class="admin__modal" @click.self="formularioAbierto = null">
-      <div class="admin__modal-contenido">
-        <PizzaForm
-          :pizza="formularioAbierto === 'nueva' ? null : formularioAbierto"
-          @guardar="guardarPizza"
-          @cancelar="formularioAbierto = null"
-        />
-      </div>
-    </div>
+    <AdminFooter />
 
     <ModalConfirmar
       v-if="pizzaAEliminar"
@@ -177,153 +214,254 @@ async function eliminarConfirmado() {
       @confirmar="eliminarConfirmado"
       @cancelar="pizzaAEliminar = null"
     />
-  </section>
+
+    <NotificacionToast v-if="mensaje" :mensaje="mensaje" @cerrar="mensaje = ''" />
+  </div>
 </template>
 
 <style scoped>
-.admin {
-  min-height: 100vh;
-  background-color: #f3e6dc;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 3rem 1.5rem 4rem;
-}
-
-.admin__encabezado {
+.admin-pagina {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--surface);
 }
 
-.admin__ojo {
-  font-family: 'Figtree', system-ui, sans-serif;
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #a62518;
-  font-weight: 600;
-  margin: 0 0 0.6rem;
+.admin {
+  flex: 1;
+  width: 100%;
+  /* 80px = la altura fija de AdminHeader (ver AdminHeader.vue): sin este padding, el
+     encabezado "flotante" taparía el primer tramo del contenido. */
+  padding-top: 80px;
 }
 
-.admin__titulo {
-  font-family: 'Marcellus', Georgia, serif;
-  font-weight: 400;
-  font-size: 2.1rem;
-  color: #2a170f;
-  margin: 0;
+.admin__contenido {
+  width: 100%;
+  padding: var(--space-lg) var(--margin-mobile);
 }
 
-.admin__linea {
-  width: 56px;
-  height: 1px;
-  background-color: #a62518;
-  margin-top: 1.1rem;
+@media (min-width: 768px) {
+  .admin__contenido {
+    padding: var(--space-lg) var(--margin);
+  }
 }
 
-.admin__agregar {
-  padding: 0.7rem 1.4rem;
-  border: none;
-  border-radius: 2px;
-  background-color: #a62518;
-  color: #fbf3e7;
-  font-family: 'Figtree', system-ui, sans-serif;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-.admin__agregar:hover {
-  background-color: #8a1f15;
-}
-
-.admin__aviso {
-  margin: 0 0 1.5rem;
-  padding: 0.65rem 1rem;
-  border-left: 3px solid;
-  font-family: 'Figtree', system-ui, sans-serif;
-  font-size: 0.9rem;
-}
-
-.admin__aviso--exito {
-  border-color: #2a6a48;
-  background-color: rgba(42, 106, 72, 0.08);
-  color: #2a6a48;
-}
-
-.admin__aviso--error {
-  border-color: #a62518;
-  background-color: rgba(166, 37, 24, 0.08);
-  color: #a62518;
-}
-
-.admin__toast {
-  position: fixed;
-  right: 1.5rem;
-  bottom: 1.5rem;
-  margin: 0;
-  padding: 0.85rem 1.4rem;
-  border-radius: 2px;
-  background-color: #2a6a48;
-  color: #fbf3e7;
-  font-family: 'Figtree', system-ui, sans-serif;
-  font-size: 0.88rem;
-  font-weight: 600;
-  box-shadow: 0 6px 24px rgba(27, 17, 10, 0.25);
-  z-index: 20;
-}
-
-.admin__toast-transicion-enter-active,
-.admin__toast-transicion-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
-
-.admin__toast-transicion-enter-from,
-.admin__toast-transicion-leave-to {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-.admin__carta {
-  background-color: #fff8f6;
-  border-radius: 4px;
-  padding: 1.75rem;
-  box-shadow: 0 2px 20px rgba(42, 23, 15, 0.08);
+.admin__error {
+  margin: 0 0 var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-left: 3px solid var(--error);
+  background-color: var(--error-container);
+  color: var(--on-error-container);
+  font: var(--fw-body-md) var(--fs-body-md)/var(--lh-body-md) var(--font-body);
+  border-radius: var(--radius);
 }
 
 .admin__cargando {
-  margin: 0;
-  padding: 2rem 0;
   text-align: center;
-  color: #7a5b4c;
-  font-family: 'Figtree', system-ui, sans-serif;
+  padding: var(--space-xl) 0;
+  color: var(--on-surface-variant);
+  font: var(--fw-body-md) var(--fs-body-md)/var(--lh-body-md) var(--font-body);
 }
 
-.admin__modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(27, 17, 10, 0.65);
+/* ---- Encabezado de la sección ---- */
+.admin__seccion-encabezado {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+@media (min-width: 768px) {
+  .admin__seccion-encabezado {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.admin__seccion-titulo-bloque {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.admin__seccion-icono {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-xl);
+  background-color: var(--surface-container-high);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
-  z-index: 10;
-  overflow-y: auto;
+  box-shadow: 0 1px 3px rgba(44, 24, 16, 0.08);
 }
 
-.admin__modal-contenido {
-  background-color: #fff8f6;
-  border-radius: 4px;
-  padding: 2rem;
-  max-width: 700px;
-  width: 100%;
+.admin__seccion-icono .material-symbols-outlined {
+  font-size: 28px;
+}
+
+.admin__seccion-textos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin__seccion-titulo-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.admin__seccion-titulo {
+  margin: 0;
+  font: var(--fw-headline-lg-mobile) var(--fs-headline-lg-mobile)/var(--lh-headline-lg-mobile) var(--font-headline);
+  color: var(--on-surface);
+  letter-spacing: -0.01em;
+}
+
+@media (min-width: 768px) {
+  .admin__seccion-titulo {
+    font-size: var(--fs-headline-lg);
+    line-height: var(--lh-headline-lg);
+  }
+}
+
+.admin__insignia-conteo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.125rem var(--space-sm);
+  border-radius: var(--radius-full);
+  background-color: rgba(42, 106, 72, 0.1); /* --secondary al 10% */
+  color: var(--secondary);
+  font: var(--fw-label-sm) var(--fs-label-sm)/var(--lh-label-sm) var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.admin__punto-animado {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--secondary);
+  animation: admin-pulso 1.6s ease-in-out infinite;
+}
+
+@keyframes admin-pulso {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.admin__seccion-descripcion {
+  margin: 0;
+  font: var(--fw-body-sm) var(--fs-body-sm)/var(--lh-body-sm) var(--font-body);
+  color: var(--on-surface-variant);
+}
+
+.admin__seccion-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+/* "Moneda: COP" se oculta por debajo de 1280px, igual que el diseño de referencia
+   (hidden xl:flex): en pantallas medianas ya no queda espacio cómodo para esta píldora
+   junto al botón de agregar. */
+.admin__moneda {
+  display: none;
+  align-items: center;
+  gap: 0.3rem;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-container-low);
+  color: var(--on-surface-variant);
+  font: var(--fw-label-md) var(--fs-label-md)/var(--lh-label-md) var(--font-body);
+  white-space: nowrap;
+}
+
+.admin__moneda .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--tertiary);
+}
+
+@media (min-width: 1280px) {
+  .admin__moneda {
+    display: flex;
+  }
+}
+
+.admin__agregar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  border-radius: var(--radius-lg);
+  background-color: var(--primary);
+  color: var(--on-primary);
+  font: var(--fw-label-lg) var(--fs-label-lg)/var(--lh-label-lg) var(--font-body);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(166, 37, 24, 0.3);
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.admin__agregar .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.admin__agregar:active {
+  transform: scale(0.95);
+}
+
+.admin__agregar:hover {
+  background-color: var(--primary-container);
+}
+
+/* ---- Distribución principal: tabla + formulario ---- */
+.admin__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gutter-mobile);
+  align-items: start;
+}
+
+/*
+ * min-width: 0 en los dos hijos del grid: sin esto, un elemento de grid "hereda" como
+ * ancho mínimo el ancho de su contenido más ancho (min-width: auto es el valor por
+ * defecto). PizzaTabla.vue trae una tabla con min-width: 620px para su propio scroll
+ * interno; sin esta regla, ese ancho se filtra hacia arriba y obliga a TODA la columna
+ * del grid (en celular, la misma columna donde también vive el formulario) a crecer más
+ * allá de la pantalla, aunque la tabla tenga su propio overflow-x: auto. Es el motivo por
+ * el que, antes de este arreglo, el panel del formulario se veía empujado fuera de la
+ * pantalla en celular.
+ */
+.admin__grid-tabla,
+.admin__grid-form {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .admin__grid {
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--gutter);
+  }
+
+  .admin__grid-tabla {
+    grid-column: span 7;
+  }
+
+  .admin__grid-form {
+    grid-column: span 5;
+  }
 }
 </style>

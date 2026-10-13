@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   pizzas: Array,
 })
 
@@ -14,11 +16,33 @@ const emit = defineEmits(['editar', 'eliminar', 'agregar'])
 function formatearPrecio(precio) {
   return '$' + precio.toLocaleString('es-CO')
 }
+
+// Se recalcula solo cuando cambia la lista de pizzas (computed, no una función normal):
+// es un dato que se muestra en pantalla, así que conviene que Vue lo trate como reactivo.
+const precioPromedio = computed(() => {
+  if (props.pizzas.length === 0) return 0
+  const suma = props.pizzas.reduce((total, pizza) => total + pizza.precio, 0)
+  return Math.round(suma / props.pizzas.length)
+})
 </script>
 
 <template>
   <div class="pizza-tabla">
     <div v-if="pizzas.length === 0" class="pizza-tabla__vacio">
+      <!-- Mismo trazo rojo fino que la línea ondulada de MenuPizzas.vue: un ícono de
+           porción simple, aria-hidden porque no aporta nada a un lector de pantalla. -->
+      <svg viewBox="0 0 64 64" class="pizza-tabla__vacio-icono" aria-hidden="true">
+        <path
+          d="M32 8 L58 54 L6 54 Z"
+          fill="none"
+          stroke="#a62518"
+          stroke-width="2"
+          stroke-linejoin="round"
+        />
+        <circle cx="32" cy="34" r="2.5" fill="#a62518" />
+        <circle cx="24" cy="44" r="2.5" fill="#a62518" />
+        <circle cx="40" cy="44" r="2.5" fill="#a62518" />
+      </svg>
       <p>Todavía no hay pizzas en el menú.</p>
       <button type="button" @click="emit('agregar')">Agregar pizza</button>
     </div>
@@ -48,7 +72,10 @@ function formatearPrecio(precio) {
                 class="pizza-tabla__foto"
               />
             </td>
-            <td class="pizza-tabla__nombre">{{ pizza.nombre }}</td>
+            <td class="pizza-tabla__nombre">
+              {{ pizza.nombre }}
+              <span v-if="pizza.destacado" class="pizza-tabla__badge">Destacada</span>
+            </td>
             <!-- class="pizza-tabla__descripcion" recorta el texto a una sola línea con "..."
                  (ver <style>): una descripción larga no debería estirar la fila completa. -->
             <td class="pizza-tabla__descripcion">{{ pizza.descripcion }}</td>
@@ -64,6 +91,11 @@ function formatearPrecio(precio) {
           </tr>
         </tbody>
       </table>
+
+      <p class="pizza-tabla__resumen">
+        Precio promedio del catálogo: <strong>{{ formatearPrecio(precioPromedio) }}</strong>
+        <span class="pizza-tabla__resumen-cantidad">({{ pizzas.length }} pizzas)</span>
+      </p>
     </div>
   </div>
 </template>
@@ -78,6 +110,12 @@ function formatearPrecio(precio) {
   padding: 3rem 1rem;
   color: #7a5b4c;
   font-family: 'Figtree', system-ui, sans-serif;
+}
+
+.pizza-tabla__vacio-icono {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 0.5rem;
 }
 
 .pizza-tabla__vacio button {
@@ -126,6 +164,20 @@ function formatearPrecio(precio) {
 
 .pizza-tabla__nombre {
   font-weight: 600;
+}
+
+.pizza-tabla__badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+  background-color: #a62518;
+  color: #fff8f6;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
 }
 
 .pizza-tabla__precio {
@@ -197,5 +249,22 @@ function formatearPrecio(precio) {
 .pizza-tabla__eliminar:hover {
   background-color: #a62518;
   color: #fff8f6;
+}
+
+.pizza-tabla__resumen {
+  margin: 1.1rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid #f0e3d8;
+  color: #7a5b4c;
+  font-size: 0.85rem;
+}
+
+.pizza-tabla__resumen strong {
+  color: #2a6a48;
+}
+
+.pizza-tabla__resumen-cantidad {
+  margin-left: 0.3rem;
+  color: #a79284;
 }
 </style>

@@ -27,7 +27,7 @@ function crearCopia() {
     // <input> con v-model="copia.nombre" estaría modificando la prop por dentro.
     return { ...props.pizza }
   }
-  return { id: null, nombre: '', descripcion: '', precio: null, imagen: '' }
+  return { id: null, nombre: '', descripcion: '', precio: null, imagen: '', destacado: false }
 }
 
 // En Vue, una prop le pertenece al componente PADRE: el hijo solo la "pide prestada"
@@ -100,6 +100,11 @@ function guardar() {
         </select>
       </label>
 
+      <label class="pizza-form__destacado">
+        <input type="checkbox" v-model="copia.destacado" />
+        <span>Marcar como destacada</span>
+      </label>
+
       <div class="pizza-form__botones">
         <button type="button" class="pizza-form__cancelar" @click="emit('cancelar')">
           Cancelar
@@ -113,7 +118,10 @@ function guardar() {
          se refleja aquí de inmediato, sin que haya que hacer nada extra. -->
     <div class="pizza-form__vista-previa">
       <p class="pizza-form__vista-previa-ojo">Vista previa</p>
-      <h3>Así se ve en la carta</h3>
+      <h3>
+        Así se ve en la carta
+        <span v-if="copia.destacado" class="pizza-form__badge">Destacada</span>
+      </h3>
       <div class="pizza-form__vista-previa-caja">
         <PizzaCard :pizza="copia" />
       </div>
@@ -193,6 +201,25 @@ function guardar() {
   font-size: 0.75rem;
 }
 
+.pizza-form__destacado {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+}
+
+.pizza-form__destacado input {
+  accent-color: #a62518;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.pizza-form__destacado span {
+  font-size: 0.85rem;
+  color: #2a170f;
+}
+
 .pizza-form__error {
   color: #a62518;
   font-size: 0.8rem;
@@ -255,11 +282,27 @@ function guardar() {
 }
 
 .pizza-form__vista-previa h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   font-family: 'Marcellus', Georgia, serif;
   font-weight: 400;
   margin: 0.25rem 0 1rem;
   color: #2a170f;
   font-size: 1.15rem;
+}
+
+.pizza-form__badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 2px;
+  background-color: #a62518;
+  color: #fff8f6;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .pizza-form__vista-previa-caja {

@@ -136,8 +136,14 @@ async function eliminarConfirmado() {
       <button type="button" class="admin__agregar" @click="abrirCrear">+ Agregar pizza</button>
     </div>
 
-    <p v-if="mensaje" class="admin__aviso admin__aviso--exito">{{ mensaje }}</p>
     <p v-if="error" class="admin__aviso admin__aviso--error">{{ error }}</p>
+
+    <!-- Toast flotante en vez de un bloque fijo en el flujo: "mensaje" ya se borra
+         solo a los 2.5s (ver avisar() en el script), así que no necesita ocupar
+         espacio permanente ni empujar el resto del panel hacia abajo. -->
+    <Transition name="admin__toast-transicion">
+      <p v-if="mensaje" class="admin__toast">{{ mensaje }}</p>
+    </Transition>
 
     <div class="admin__carta">
       <p v-if="cargando" class="admin__cargando">Cargando pizzas...</p>
@@ -254,6 +260,33 @@ async function eliminarConfirmado() {
   border-color: #a62518;
   background-color: rgba(166, 37, 24, 0.08);
   color: #a62518;
+}
+
+.admin__toast {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  margin: 0;
+  padding: 0.85rem 1.4rem;
+  border-radius: 2px;
+  background-color: #2a6a48;
+  color: #fbf3e7;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 6px 24px rgba(27, 17, 10, 0.25);
+  z-index: 20;
+}
+
+.admin__toast-transicion-enter-active,
+.admin__toast-transicion-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.admin__toast-transicion-enter-from,
+.admin__toast-transicion-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 .admin__carta {

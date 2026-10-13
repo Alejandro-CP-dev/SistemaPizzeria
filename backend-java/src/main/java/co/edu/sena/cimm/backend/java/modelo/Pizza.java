@@ -3,7 +3,7 @@ package co.edu.sena.cimm.backend.java.modelo;
 /**
  * Representa una fila de la tabla Pizza.
  * Los atributos están en camelCase porque Gson los convierte directo a JSON
- * con el mismo nombre; así el frontend recibe {id, nombre, precio, imagen, descripcion}.
+ * con el mismo nombre; así el frontend recibe {id, nombre, precio, imagen, descripcion, destacado}.
  */
 public class Pizza {
 
@@ -12,6 +12,7 @@ public class Pizza {
     private int precio;
     private String imagen;
     private String descripcion;
+    private boolean destacado;
 
     public Pizza() {
     }
@@ -54,5 +55,13 @@ public class Pizza {
 
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
+    }
+
+    public boolean isDestacado() {
+        return destacado;
+    }
+
+    public void setDestacado(boolean destacado) {
+        this.destacado = destacado;
     }
 }

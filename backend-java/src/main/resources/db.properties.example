@@ -13,3 +13,15 @@
 db.url=jdbc:mysql://localhost:3306/pizzeria?useSSL=false&serverTimezone=America/Bogota&connectTimeout=5000
 db.usuario=root
 db.clave=
+
+# Carpeta donde ImagenServlet guarda las fotos que se suben desde el panel de
+# administración (PizzaForm.vue). Tiene que ser la MISMA carpeta que ya sirve las fotos
+# del menú, osea frontend-vue/public/images/pizzas: Vite sirve ese contenido tal cual en
+# /images/pizzas/... (así es como ya se ven hawaiana.jpg, pepperoni.jpg, etc.), así que
+# cualquier archivo nuevo que llegue aquí aparece automáticamente en esa misma ruta, sin
+# tener que tocar nada del lado del frontend. Como Tomcat es un proceso aparte de Vite
+# (no comparten carpeta de trabajo), esta ruta tiene que ser ABSOLUTA; cada quien la
+# ajusta a donde tenga clonado el proyecto en su propia máquina.
+# En Windows se escribe con "/" (no "\"): Java los acepta igual y así se evita que una
+# barra invertida se interprete como un caracter de escape dentro del archivo .properties.
+imagenes.directorio=C:/ruta/a/tu/SistemaPizzeria/frontend-vue/public/images/pizzas

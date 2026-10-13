@@ -64,8 +64,52 @@ async function manejarFallo(respuesta) {
   error.value = cuerpo && cuerpo.error ? cuerpo.error : 'Ocurrió un error inesperado.'
 }
 
-async function guardarPizza(datos) {
+/**
+ * Sube "archivo" a ImagenServlet y devuelve el nombre final con el que quedó guardado
+ * (ej. "1699999999999.jpg"), o null si la subida falló (ya habiendo dejado el mensaje
+ * de error listo en "error"). FormData arma el cuerpo multipart/form-data a mano, con
+ * el mismo nombre de campo ("archivo") que ImagenServlet.java lee con request.getPart().
+ *
+ * OJO: no se le pone manualmente el header Content-Type a este fetch. FormData ya sabe
+ * que debe mandar "multipart/form-data" y agrega además el "boundary" (el separador
+ * entre el archivo y el resto de campos) que el servidor necesita para leerlo; si se
+ * fijara el header a mano, ese boundary se perdería y ImagenServlet no podría separar
+ * las partes de la petición.
+ */
+async function subirImagen(archivo) {
+  const formData = new FormData()
+  formData.append('archivo', archivo)
+
+  const respuesta = await fetch('/api/imagenes', { method: 'POST', body: formData })
+  if (!respuesta.ok) {
+    await manejarFallo(respuesta)
+    return null
+  }
+  const cuerpo = await respuesta.json()
+  return cuerpo.imagen
+}
+
+async function guardarPizza({ datos, archivo }) {
   error.value = ''
+
+  // Si se eligió una foto nueva en PizzaForm, primero hay que subirla: recién con el
+  // nombre que el servidor le asigne se puede crear o actualizar la pizza. Se hace ANTES
+  // del POST/PUT a propósito, para no terminar con una pizza guardada apuntando a un
+  // archivo que nunca llegó a subirse.
+  if (archivo) {
+    try {
+      const nombreImagen = await subirImagen(archivo)
+      if (!nombreImagen) {
+        return // subirImagen ya dejó el mensaje de error listo (o redirigió a /login)
+      }
+      datos.imagen = nombreImagen
+    } catch (e) {
+      console.error(e)
+      error.value = 'No se pudo subir la imagen.'
+      return
+    }
+  }
+
   // El id solo existe si se estaba editando: así se decide entre crear o actualizar.
   const esEdicion = Boolean(datos.id)
   const url = esEdicion ? `/api/pizzas/${datos.id}` : '/api/pizzas'

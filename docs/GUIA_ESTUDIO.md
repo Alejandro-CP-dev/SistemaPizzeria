@@ -25,7 +25,7 @@ eventos suben*.
 | `components/SobreNosotros.vue` | Texto fijo sobre la pizzería. | Sección estática, sin props ni fetch: lo más simple que hay en el proyecto. |
 | `components/MenuPizzas.vue` | Recibe `pizzas` (prop) y dibuja una `PizzaCard` por cada una. | Separa "mostrar la cuadrícula" de "conseguir los datos" (eso lo hace `InicioView`). |
 | `components/PizzaCard.vue` | Una tarjeta: foto (o "Sin foto"), nombre, precio (o "Sin precio") y descripción. | Se reutiliza en 2 lugares: el menú público y la vista previa en vivo de `PizzaForm`. |
-| `components/PizzaForm.vue` | Formulario de crear/editar (panel fijo, no modal) con vista previa en vivo; valida y emite, nunca hace fetch. | Separa "la forma de los datos" de "qué hacer con ellos" (eso lo decide `AdminView`). |
+| `components/PizzaForm.vue` | Formulario de crear/editar (panel fijo, no modal) con vista previa en vivo y subida de foto real (`<input type="file">`); valida y emite, nunca hace fetch. | Separa "la forma de los datos" de "qué hacer con ellos" (eso lo decide `AdminView`). |
 | `components/PizzaTabla.vue` | Tabla del panel con buscador, foto, nombre, descripción, precio y botones. | Es la vista de "lista" del admin, paralela a `MenuPizzas` en la vista pública. |
 | `components/ModalConfirmar.vue` | Pregunta "¿Eliminar X?" antes de borrar (se cierra con Cancelar, Escape o clic afuera). | Evita que un clic accidental en "Eliminar" borre algo sin avisar. |
 | `components/AdminHeader.vue` | Encabezado fijo de `/admin`: logo, enlace a la carta pública, nombre real del usuario y botón de cerrar sesión. | Reemplaza a `NavBar` dentro del panel: la navegación pública no tiene sentido ahí. |
@@ -39,9 +39,10 @@ eventos suben*.
 |---|---|---|
 | `servlets/PizzaServlet.java` | Atiende `/api/pizzas` y `/api/pizzas/{id}`: GET público, POST/PUT/DELETE con sesión. | Es la puerta de entrada HTTP para todo lo de pizzas. |
 | `servlets/AuthServlet.java` | Atiende `/api/login`, `/api/logout`, `/api/sesion`. | Es la puerta de entrada HTTP para todo lo de sesión. |
+| `servlets/ImagenServlet.java` | Atiende `POST /api/imagenes`: recibe la foto que se sube desde PizzaForm.vue (`multipart/form-data`, campo `archivo`) y la guarda en `imagenes.directorio`. | Separado de PizzaServlet porque atiende un formato de petición distinto (no JSON): mezclar los dos habría obligado a revisar el Content-Type a mano dentro del mismo método. |
 | `datos/PizzaDAO.java` | Las 5 consultas SQL de la tabla `Pizza` (listar, buscar, insertar, actualizar, eliminar). | Separa "hablar HTTP" (el Servlet) de "hablar SQL" (el DAO): si un día cambiaras de MySQL a otra base, solo tocarías esta clase. |
 | `datos/UsuarioDAO.java` | Valida login y busca un usuario por id (sin exponer nunca la clave). | Mismo motivo: aísla el SQL de la tabla `Usuario`. |
-| `datos/Conexion.java` | Lee `db.properties` y entrega una `Connection` nueva cada vez que se le pide. | Un solo lugar donde cambiar la URL/usuario/clave de MySQL si algo cambia. |
+| `datos/Conexion.java` | Lee `db.properties` y entrega una `Connection` nueva cada vez que se le pide; también expone `propiedad(nombre)` para leer cualquier otra propiedad del mismo archivo (como `imagenes.directorio`). | Un solo lugar donde cambiar la URL/usuario/clave de MySQL (o cualquier otra configuración de esta máquina) si algo cambia. |
 | `modelo/Pizza.java` | Clase con los 5 campos de una pizza (camelCase) y sus getters/setters. | Gson la usa como "molde" para convertir filas de la BD en JSON y viceversa. |
 | `modelo/Usuario.java` | Clase con los datos del usuario, **sin el campo clave**. | Así es imposible que la contraseña salga en una respuesta JSON por accidente. |
 | `util/JsonUtil.java` | Leer el cuerpo de una petición como JSON y escribir una respuesta JSON, en un solo lugar. | Evita repetir el mismo código de Gson en cada servlet. |
@@ -185,6 +186,33 @@ el sitio público) conviviendo en el mismo `index.html`.
   en vez del círculo rojo) y un `v-else` nuevo para cuando `precio` todavía es `null`
   (pasaba al crear una pizza nueva y antes no estaba cubierto).
 
+### Subir una foto real (PizzaForm.vue + ImagenServlet.java)
+
+Al principio, elegir la foto de una pizza era solo escoger un nombre de archivo de una
+lista (`<select>`) con las fotos que ya venían cargadas de fábrica. Ahora `PizzaForm.vue`
+tiene un `<input type="file">` (oculto, disparado por el botón "Examinar") que deja subir
+CUALQUIER imagen JPG/PNG/WEBP desde el computador de quien administra el panel. Guardar
+una pizza con foto nueva pasa por dos pasos, uno después del otro:
+
+1. **Elegir el archivo** (`alElegirArchivo` en `PizzaForm.vue`): valida tipo y tamaño
+   (máx. 5 MB) y, si está bien, crea una URL temporal con `URL.createObjectURL(archivo)`
+   para la vista previa en vivo. En este paso **nada** viaja todavía al servidor: el
+   archivo solo vive en la memoria del navegador. Por eso se guarda en un campo nuevo,
+   `copia.imagenVistaPrevia`, que **no** es un campo real de la tabla `Pizza` (por eso
+   `guardar()` lo borra de `datos` antes de emitir: ver la última línea de esa función).
+2. **Guardar** (`guardarPizza` en `AdminView.vue`): si `PizzaForm` emitió un `archivo`
+   (no `null`), primero lo sube con un `POST /api/imagenes` (`FormData`, no JSON) a
+   `ImagenServlet.java`, que lo guarda en disco con un nombre nuevo (la hora exacta en
+   milisegundos, nunca el nombre original: ver el porqué en los comentarios de esa
+   clase) y responde `{"imagen": "169....jpg"}`. Solo CON ESE nombre de vuelta se sigue
+   con el `POST`/`PUT` de siempre hacia `PizzaServlet`, igual que antes de este cambio.
+
+`ImagenServlet` guarda el archivo directamente en `frontend-vue/public/images/pizzas/`
+(la ruta exacta la dice `imagenes.directorio` en `db.properties`, ver `Conexion.java`):
+es la MISMA carpeta que Vite ya servía para las 6 fotos originales, así que una foto
+subida por el panel se ve en `/images/pizzas/...` exactamente igual que las de fábrica,
+sin tocar nada del lado del menú público.
+
 ### Preguntas de examen sobre el panel (sin respuestas)
 
 1. ¿Por qué `tokens.css` no tiene ninguna clase ni selector de elemento, solo variables dentro de `:root`?
@@ -193,6 +221,9 @@ el sitio público) conviviendo en el mismo `index.html`.
 4. En `AdminView.vue`, ¿qué pasaría si `PizzaForm` no tuviera el `:key="pizzaSeleccionada ? pizzaSeleccionada.id : 'nueva'"`? Pista: piensa en qué pasa con su `copia` interna al hacer clic en "Editar" sobre una pizza distinta.
 5. ¿Por qué `NotificacionToast.vue` limpia su `setTimeout` en `onUnmounted`?
 6. `AdminHeader.vue` no recibe `usuario` por prop: lo importa directo de `sesion.js`. ¿Por qué eso funciona igual de bien que pasarlo por prop, en este caso particular?
+7. ¿Por qué `ImagenServlet` nunca usa el nombre original del archivo que subió la persona (ej. "mi foto.jpg") para guardarlo en disco?
+8. En `AdminView.vue`, ¿por qué `subirImagen` se llama ANTES de armar el `POST`/`PUT` hacia `/api/pizzas`, y no al revés?
+9. `@MultipartConfig(maxFileSize = ...)` en `ImagenServlet.java` y la revisión de `archivo.size` en `PizzaForm.vue` imponen el mismo límite de 5 MB dos veces. ¿Por qué no alcanza con revisarlo solo en el navegador?
 
 ## 5. Preguntas de examen (sin respuestas)
 

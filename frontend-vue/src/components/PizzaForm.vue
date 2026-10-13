@@ -1,18 +1,13 @@
 <script setup>
-import { ref } from 'vue'
+import { onUnmounted, ref } from 'vue'
 import PizzaCard from './PizzaCard.vue'
 
-// Las imágenes que ya existen en public/images/pizzas/ (ver backend-java/database/pizzeria.sql).
-// Se usan para armar el <select> de la Imagen: no hay botón "Examinar" porque este proyecto
-// no sube archivos nuevos, solo elige entre fotos que ya están en el proyecto.
-const imagenesDisponibles = [
-  'hawaiana.jpg',
-  'pepperoni.jpg',
-  'mexicana.jpg',
-  'carnes.jpg',
-  'costillas.jpg',
-  'pollo-champinon.jpg',
-]
+// Mismos límites en los dos lados: aquí se avisa rápido, sin esperar una respuesta del
+// servidor; en ImagenServlet.java se vuelven a revisar de verdad, porque el navegador
+// se puede saltar (con curl, Postman, etc.) y el backend no puede confiar en que el
+// archivo que le llega ya viene validado.
+const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
+const TAMANO_MAXIMO = 5 * 1024 * 1024 // 5 MB
 
 const props = defineProps({
   // null -> se está creando una pizza nueva. Un objeto -> se está editando esa pizza.
@@ -44,15 +39,28 @@ function crearCopia() {
 // sobre "copia": un ref propio de este componente, separado de la prop.
 const copia = ref(crearCopia())
 
-// Empieza vacío a propósito: mientras "errores.nombre"/"errores.precio" sean cadenas
-// vacías, el <template> no dibuja ningún estado de error (ver v-if más abajo). Solo se
-// llenan dentro de validar(), y solo cuando alguien intenta guardar con datos inválidos:
-// así el formulario no "regaña" a nadie por un campo vacío que todavía ni ha tocado.
-const errores = ref({ nombre: '', precio: '' })
+// El archivo que la persona elige con "Examinar" (o null si no eligió uno nuevo: al
+// editar una pizza que ya tenía foto, esta copia conserva su "imagen" de siempre sin
+// que haga falta volver a subir nada). Se guarda APARTE de "copia" porque un File no es
+// un dato que vaya a viajar como JSON a PizzaServlet: primero hay que subirlo a
+// ImagenServlet, que es quien de verdad devuelve el nombre final del archivo (ver
+// guardar() más abajo y guardarPizza() en AdminView.vue).
+const archivoImagen = ref(null)
+const inputArchivo = ref(null)
+
+// Empieza vacío a propósito: mientras "errores.nombre"/"errores.precio"/"errores.imagen"
+// sean cadenas vacías, el <template> no dibuja ningún estado de error (ver v-if más
+// abajo). Las de nombre/precio solo se llenan dentro de validar(), al intentar guardar;
+// la de imagen se llena apenas se elige un archivo inválido (ver alElegirArchivo), para
+// avisar de inmediato en vez de esperar a que la persona haga clic en Guardar.
+const errores = ref({ nombre: '', precio: '', imagen: '' })
 
 function validar() {
-  errores.value = { nombre: '', precio: '' }
-  let esValido = true
+  errores.value.nombre = ''
+  errores.value.precio = ''
+  // errores.imagen NO se reinicia aquí: lo controla alElegirArchivo, no un intento de
+  // guardar. Si ya hay un archivo inválido elegido, debe seguir bloqueando el guardado.
+  let esValido = !errores.value.imagen
 
   if (!copia.value.nombre || !copia.value.nombre.trim()) {
     errores.value.nombre = 'El nombre de la pizza es obligatorio'
@@ -67,11 +75,65 @@ function validar() {
   return esValido
 }
 
+/** Revoca la URL temporal anterior (si había) antes de reemplazarla o al cerrar el formulario. */
+function limpiarVistaPreviaAnterior() {
+  if (copia.value.imagenVistaPrevia) {
+    // Un blob: URL ocupa memoria en el navegador hasta que se revoca a mano; a
+    // diferencia de la memoria normal de JavaScript, el recolector de basura no la
+    // libera solo. Si no se revocara, cada foto nueva que alguien probara aquí (antes
+    // de decidirse a guardar) se quedaría ocupando espacio el resto de la sesión.
+    URL.revokeObjectURL(copia.value.imagenVistaPrevia)
+  }
+}
+
+function alElegirArchivo(evento) {
+  const archivo = evento.target.files[0]
+  // Limpia el <input> para que, si más adelante la persona vuelve a elegir el MISMO
+  // archivo (por ejemplo, después de cancelar), el navegador dispare @change otra vez:
+  // sin esto, elegir dos veces seguidas el mismo archivo no generaría ningún evento.
+  evento.target.value = ''
+  if (!archivo) {
+    return
+  }
+
+  if (!TIPOS_PERMITIDOS.includes(archivo.type)) {
+    errores.value.imagen = 'Solo se permiten imágenes JPG, PNG o WEBP.'
+    return
+  }
+  if (archivo.size > TAMANO_MAXIMO) {
+    errores.value.imagen = 'La imagen no puede pesar más de 5 MB.'
+    return
+  }
+
+  errores.value.imagen = ''
+  limpiarVistaPreviaAnterior()
+  archivoImagen.value = archivo
+  // URL.createObjectURL crea una dirección temporal (blob:http://...) que el propio
+  // navegador entiende para mostrar un archivo que el usuario eligió en su computador,
+  // SIN haberlo subido todavía a ningún servidor. Es justo lo que hace falta para la
+  // vista previa en vivo: el archivo no existe en el backend hasta que se guarda.
+  copia.value.imagenVistaPrevia = URL.createObjectURL(archivo)
+}
+
+// Si la persona cierra el formulario (Cancelar, o cambia a editar otra pizza) sin haber
+// guardado, la URL temporal de la vista previa se queda "viva" en el navegador a menos
+// que se revoque aquí. onUnmounted se dispara siempre en ese momento porque AdminView.vue
+// monta un PizzaForm nuevo con :key cada vez que cambia qué se está editando (ver
+// AdminView.vue): el PizzaForm anterior se destruye de verdad, no se reutiliza.
+onUnmounted(limpiarVistaPreviaAnterior)
+
 function guardar() {
   if (!validar()) {
     return // No se emite nada: AdminView nunca se entera de un formulario inválido.
   }
-  emit('guardar', { ...copia.value })
+  // "imagenVistaPrevia" es un dato de solo este componente (la URL temporal del blob);
+  // Pizza.java no tiene ese campo y nunca debería viajar al backend como si fuera parte
+  // de la pizza. "archivo" viaja APARTE, no dentro de "datos", porque AdminView.vue
+  // necesita subirlo primero (a ImagenServlet) y recién después armar el POST/PUT de la
+  // pizza con el nombre de archivo que el servidor le devuelva.
+  const datos = { ...copia.value }
+  delete datos.imagenVistaPrevia
+  emit('guardar', { datos, archivo: archivoImagen.value })
 }
 </script>
 
@@ -101,16 +163,45 @@ function guardar() {
           </label>
           <div class="pizza-form__imagen-caja">
             <div class="pizza-form__imagen-miniatura">
-              <div v-if="!copia.imagen" class="pizza-form__imagen-vacia">Sin foto</div>
-              <img v-else :src="`/images/pizzas/${copia.imagen}`" :alt="copia.nombre" />
+              <div v-if="!copia.imagen && !copia.imagenVistaPrevia" class="pizza-form__imagen-vacia">Sin foto</div>
+              <img v-else :src="copia.imagenVistaPrevia || `/images/pizzas/${copia.imagen}`" :alt="copia.nombre" />
             </div>
-            <!-- <select> en vez del "Examinar" del diseño: este proyecto no sube archivos
-                 nuevos, solo elige entre las fotos que ya están en public/images/pizzas/. -->
-            <select v-model="copia.imagen" class="pizza-form__select-imagen">
-              <option value="">Sin imagen</option>
-              <option v-for="img in imagenesDisponibles" :key="img" :value="img">{{ img }}</option>
-            </select>
+            <div class="pizza-form__imagen-controles">
+              <div class="pizza-form__imagen-fila">
+                <!-- readonly: este campo solo MUESTRA qué archivo quedó elegido, nunca se
+                     escribe directo en él. El nombre real de la foto lo decide siempre
+                     ImagenServlet (ver guardarPizza() en AdminView.vue), nunca el navegador. -->
+                <input
+                  type="text"
+                  readonly
+                  class="pizza-form__imagen-nombre"
+                  :value="archivoImagen ? archivoImagen.name : copia.imagen || ''"
+                  placeholder="Ningún archivo elegido"
+                />
+                <!-- El <input type="file"> real queda oculto (ver .pizza-form__input-oculto):
+                     los navegadores no dejan diseñar ese control directamente, así que este
+                     botón normal lo "dispara" por código con inputArchivo.click(). -->
+                <button type="button" class="pizza-form__examinar" @click="inputArchivo.click()">
+                  Examinar
+                </button>
+              </div>
+              <span v-if="archivoImagen" class="pizza-form__imagen-ok">
+                <span class="material-symbols-outlined">cloud_upload</span>
+                <span>Se subirá al guardar</span>
+              </span>
+            </div>
+            <input
+              ref="inputArchivo"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="pizza-form__input-oculto"
+              @change="alElegirArchivo"
+            />
           </div>
+          <p v-if="errores.imagen" class="pizza-form__mensaje-error">
+            <span class="material-symbols-outlined">info</span>
+            <span>{{ errores.imagen }}</span>
+          </p>
         </div>
 
         <!-- Campo 2: Nombre -->
@@ -362,10 +453,24 @@ function guardar() {
   padding: 0.2rem;
 }
 
-.pizza-form__select-imagen {
+.pizza-form__imagen-controles {
   flex: 1;
   min-width: 0;
-  padding: 0.5rem var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pizza-form__imagen-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.pizza-form__imagen-nombre {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem var(--space-sm);
   border: none;
   border-radius: var(--radius-lg);
   background-color: var(--surface-container-lowest);
@@ -373,8 +478,51 @@ function guardar() {
   font: var(--fw-body-sm) var(--fs-body-sm)/var(--lh-body-sm) var(--font-body);
 }
 
-.pizza-form__select-imagen:focus {
-  outline: 2px solid rgba(166, 37, 24, 0.2);
+.pizza-form__imagen-nombre::placeholder {
+  color: rgba(89, 65, 61, 0.5); /* --on-surface-variant al 50% */
+}
+
+.pizza-form__examinar {
+  flex-shrink: 0;
+  padding: 0.4rem var(--space-sm);
+  border: none;
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-container);
+  color: var(--on-surface);
+  font: var(--fw-label-sm) var(--fs-label-sm)/var(--lh-label-sm) var(--font-body);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.pizza-form__examinar:hover {
+  background-color: var(--surface-container-high);
+}
+
+.pizza-form__imagen-ok {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--secondary);
+  font: var(--fw-label-sm) var(--fs-label-sm)/var(--lh-label-sm) var(--font-body);
+}
+
+.pizza-form__imagen-ok .material-symbols-outlined {
+  font-size: 14px !important;
+}
+
+/* El <input type="file"> nativo no se puede re-diseñar de forma confiable entre
+   navegadores (cada uno dibuja su propio botón "Elegir archivo"); por eso se mantiene
+   en el DOM (para que siga funcionando con teclado y lectores de pantalla) pero
+   invisible, y el botón ".pizza-form__examinar" de arriba lo abre por código. */
+.pizza-form__input-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 .pizza-form__input-envoltorio {

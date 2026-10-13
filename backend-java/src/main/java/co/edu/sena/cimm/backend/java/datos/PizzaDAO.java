@@ -23,7 +23,7 @@ import java.util.List;
 public class PizzaDAO {
 
     public List<Pizza> listar() throws SQLException {
-        String sql = "SELECT Id, Nombre, Precio, Imagen, Descripcion FROM Pizza ORDER BY Id";
+        String sql = "SELECT Id, Nombre, Precio, Imagen, Descripcion, Destacado FROM Pizza ORDER BY Id";
         List<Pizza> pizzas = new ArrayList<>();
         try (Connection conexion = Conexion.obtener();
              PreparedStatement sentencia = conexion.prepareStatement(sql);
@@ -36,7 +36,7 @@ public class PizzaDAO {
     }
 
     public Pizza buscarPorId(int id) throws SQLException {
-        String sql = "SELECT Id, Nombre, Precio, Imagen, Descripcion FROM Pizza WHERE Id = ?";
+        String sql = "SELECT Id, Nombre, Precio, Imagen, Descripcion, Destacado FROM Pizza WHERE Id = ?";
         try (Connection conexion = Conexion.obtener();
              PreparedStatement sentencia = conexion.prepareStatement(sql)) {
             sentencia.setInt(1, id);
@@ -47,7 +47,7 @@ public class PizzaDAO {
     }
 
     public Pizza insertar(Pizza pizza) throws SQLException {
-        String sql = "INSERT INTO Pizza (Nombre, Precio, Imagen, Descripcion) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Pizza (Nombre, Precio, Imagen, Descripcion, Destacado) VALUES (?, ?, ?, ?, ?)";
         // Statement.RETURN_GENERATED_KEYS le pide a MySQL que nos devuelva el Id
         // que él mismo generó con AUTO_INCREMENT, para no tener que adivinarlo.
         try (Connection conexion = Conexion.obtener();
@@ -56,6 +56,7 @@ public class PizzaDAO {
             sentencia.setInt(2, pizza.getPrecio());
             sentencia.setString(3, pizza.getImagen());
             sentencia.setString(4, pizza.getDescripcion());
+            sentencia.setBoolean(5, pizza.isDestacado());
             sentencia.executeUpdate();
 
             try (ResultSet generadas = sentencia.getGeneratedKeys()) {
@@ -68,14 +69,15 @@ public class PizzaDAO {
     }
 
     public boolean actualizar(Pizza pizza) throws SQLException {
-        String sql = "UPDATE Pizza SET Nombre = ?, Precio = ?, Imagen = ?, Descripcion = ? WHERE Id = ?";
+        String sql = "UPDATE Pizza SET Nombre = ?, Precio = ?, Imagen = ?, Descripcion = ?, Destacado = ? WHERE Id = ?";
         try (Connection conexion = Conexion.obtener();
              PreparedStatement sentencia = conexion.prepareStatement(sql)) {
             sentencia.setString(1, pizza.getNombre());
             sentencia.setInt(2, pizza.getPrecio());
             sentencia.setString(3, pizza.getImagen());
             sentencia.setString(4, pizza.getDescripcion());
-            sentencia.setInt(5, pizza.getId());
+            sentencia.setBoolean(5, pizza.isDestacado());
+            sentencia.setInt(6, pizza.getId());
             // executeUpdate devuelve cuántas filas cambiaron; si es 0, ese Id no existía.
             return sentencia.executeUpdate() > 0;
         }
@@ -97,6 +99,7 @@ public class PizzaDAO {
         pizza.setPrecio(resultado.getInt("Precio"));
         pizza.setImagen(resultado.getString("Imagen"));
         pizza.setDescripcion(resultado.getString("Descripcion"));
+        pizza.setDestacado(resultado.getBoolean("Destacado"));
         return pizza;
     }
 }

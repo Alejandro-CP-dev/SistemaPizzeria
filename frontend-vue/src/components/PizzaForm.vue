@@ -27,7 +27,7 @@ function crearCopia() {
     // <input> con v-model="copia.nombre" estaría modificando la prop por dentro.
     return { ...props.pizza }
   }
-  return { id: null, nombre: '', descripcion: '', precio: null, imagen: '' }
+  return { id: null, nombre: '', descripcion: '', precio: null, imagen: '', destacado: false }
 }
 
 // En Vue, una prop le pertenece al componente PADRE: el hijo solo la "pide prestada"
@@ -67,23 +67,24 @@ function guardar() {
 <template>
   <div class="pizza-form">
     <form class="pizza-form__campos" @submit.prevent="guardar">
+      <p class="pizza-form__ojo">{{ pizza ? 'Editar plato' : 'Nuevo plato' }}</p>
       <h2>{{ pizza ? 'Editar pizza' : 'Nueva pizza' }}</h2>
 
       <label class="pizza-form__campo">
-        Nombre
+        <span>Nombre</span>
         <input v-model="copia.nombre" maxlength="50" />
         <small>{{ copia.nombre.length }} / 50</small>
         <span v-if="errores.nombre" class="pizza-form__error">{{ errores.nombre }}</span>
       </label>
 
       <label class="pizza-form__campo">
-        Descripción
+        <span>Descripción</span>
         <textarea v-model="copia.descripcion" maxlength="200"></textarea>
         <small>{{ (copia.descripcion || '').length }} / 200</small>
       </label>
 
       <label class="pizza-form__campo">
-        Precio
+        <span>Precio</span>
         <!-- v-model.number convierte lo que escribe el usuario (siempre texto) a número;
              sin ".number", copia.precio sería el texto "32000" en vez del número 32000,
              y la vista previa (PizzaCard) fallaría al formatearlo con toLocaleString. -->
@@ -92,11 +93,16 @@ function guardar() {
       </label>
 
       <label class="pizza-form__campo">
-        Imagen
+        <span>Imagen</span>
         <select v-model="copia.imagen">
           <option value="">Sin imagen</option>
           <option v-for="img in imagenesDisponibles" :key="img" :value="img">{{ img }}</option>
         </select>
+      </label>
+
+      <label class="pizza-form__destacado">
+        <input type="checkbox" v-model="copia.destacado" />
+        <span>Marcar como destacada</span>
       </label>
 
       <div class="pizza-form__botones">
@@ -111,8 +117,14 @@ function guardar() {
          por "copia". Como copia es reactiva, cada letra que se escribe en el formulario
          se refleja aquí de inmediato, sin que haya que hacer nada extra. -->
     <div class="pizza-form__vista-previa">
-      <h3>Vista previa en la carta</h3>
-      <PizzaCard :pizza="copia" />
+      <p class="pizza-form__vista-previa-ojo">Vista previa</p>
+      <h3>
+        Así se ve en la carta
+        <span v-if="copia.destacado" class="pizza-form__badge">Destacada</span>
+      </h3>
+      <div class="pizza-form__vista-previa-caja">
+        <PizzaCard :pizza="copia" />
+      </div>
     </div>
   </div>
 </template>
@@ -121,42 +133,99 @@ function guardar() {
 .pizza-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 2rem;
+  gap: 2.5rem;
+  font-family: 'Figtree', system-ui, sans-serif;
 }
 
 .pizza-form__campos {
   flex: 1 1 280px;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 1rem;
+}
+
+.pizza-form__ojo {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #a62518;
+  font-weight: 600;
+  margin: 0;
 }
 
 .pizza-form__campos h2 {
-  margin: 0;
-  color: #a62518;
+  font-family: 'Marcellus', Georgia, serif;
+  font-weight: 400;
+  margin: 0 0 0.25rem;
+  color: #2a170f;
+  font-size: 1.5rem;
 }
 
 .pizza-form__campo {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
   color: #2a170f;
   font-size: 0.9rem;
+}
+
+.pizza-form__campo span {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #7a5b4c;
 }
 
 .pizza-form__campo input,
 .pizza-form__campo textarea,
 .pizza-form__campo select {
-  padding: 0.5rem;
-  border: 1px solid #2a170f;
-  border-radius: 6px;
+  padding: 0.55rem;
+  border: 1px solid #e0cfc3;
+  border-radius: 2px;
   font-size: 1rem;
   font-family: inherit;
+  background-color: #fff8f6;
+  transition: border-color 0.15s;
+}
+
+.pizza-form__campo input:focus,
+.pizza-form__campo textarea:focus,
+.pizza-form__campo select:focus {
+  outline: none;
+  border-color: #a62518;
+}
+
+.pizza-form__campo small {
+  color: #a79284;
+  font-size: 0.75rem;
+}
+
+.pizza-form__destacado {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+}
+
+.pizza-form__destacado input {
+  accent-color: #a62518;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.pizza-form__destacado span {
+  font-size: 0.85rem;
+  color: #2a170f;
 }
 
 .pizza-form__error {
   color: #a62518;
   font-size: 0.8rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
 }
 
 .pizza-form__botones {
@@ -168,16 +237,24 @@ function guardar() {
 .pizza-form__guardar,
 .pizza-form__cancelar {
   flex: 1;
-  padding: 0.6rem;
-  border-radius: 6px;
-  font-size: 1rem;
+  padding: 0.65rem;
+  border-radius: 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
 }
 
 .pizza-form__guardar {
   border: none;
-  background-color: #2a6a48;
+  background-color: #a62518;
   color: #fff8f6;
+}
+
+.pizza-form__guardar:hover {
+  background-color: #8a1f15;
 }
 
 .pizza-form__cancelar {
@@ -186,13 +263,51 @@ function guardar() {
   color: #2a170f;
 }
 
+.pizza-form__cancelar:hover {
+  background-color: #2a170f;
+  color: #fff8f6;
+}
+
 .pizza-form__vista-previa {
   flex: 1 1 280px;
 }
 
+.pizza-form__vista-previa-ojo {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #a62518;
+  font-weight: 600;
+  margin: 0;
+}
+
 .pizza-form__vista-previa h3 {
-  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'Marcellus', Georgia, serif;
+  font-weight: 400;
+  margin: 0.25rem 0 1rem;
   color: #2a170f;
-  font-size: 1rem;
+  font-size: 1.15rem;
+}
+
+.pizza-form__badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 2px;
+  background-color: #a62518;
+  color: #fff8f6;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pizza-form__vista-previa-caja {
+  background-color: #f3e6dc;
+  border-radius: 4px;
+  padding: 1.5rem;
 }
 </style>

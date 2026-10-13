@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   pizzas: Array,
 })
 
@@ -14,11 +16,33 @@ const emit = defineEmits(['editar', 'eliminar', 'agregar'])
 function formatearPrecio(precio) {
   return '$' + precio.toLocaleString('es-CO')
 }
+
+// Se recalcula solo cuando cambia la lista de pizzas (computed, no una función normal):
+// es un dato que se muestra en pantalla, así que conviene que Vue lo trate como reactivo.
+const precioPromedio = computed(() => {
+  if (props.pizzas.length === 0) return 0
+  const suma = props.pizzas.reduce((total, pizza) => total + pizza.precio, 0)
+  return Math.round(suma / props.pizzas.length)
+})
 </script>
 
 <template>
   <div class="pizza-tabla">
     <div v-if="pizzas.length === 0" class="pizza-tabla__vacio">
+      <!-- Mismo trazo rojo fino que la línea ondulada de MenuPizzas.vue: un ícono de
+           porción simple, aria-hidden porque no aporta nada a un lector de pantalla. -->
+      <svg viewBox="0 0 64 64" class="pizza-tabla__vacio-icono" aria-hidden="true">
+        <path
+          d="M32 8 L58 54 L6 54 Z"
+          fill="none"
+          stroke="#a62518"
+          stroke-width="2"
+          stroke-linejoin="round"
+        />
+        <circle cx="32" cy="34" r="2.5" fill="#a62518" />
+        <circle cx="24" cy="44" r="2.5" fill="#a62518" />
+        <circle cx="40" cy="44" r="2.5" fill="#a62518" />
+      </svg>
       <p>Todavía no hay pizzas en el menú.</p>
       <button type="button" @click="emit('agregar')">Agregar pizza</button>
     </div>
@@ -48,18 +72,30 @@ function formatearPrecio(precio) {
                 class="pizza-tabla__foto"
               />
             </td>
-            <td>{{ pizza.nombre }}</td>
+            <td class="pizza-tabla__nombre">
+              {{ pizza.nombre }}
+              <span v-if="pizza.destacado" class="pizza-tabla__badge">Destacada</span>
+            </td>
             <!-- class="pizza-tabla__descripcion" recorta el texto a una sola línea con "..."
                  (ver <style>): una descripción larga no debería estirar la fila completa. -->
             <td class="pizza-tabla__descripcion">{{ pizza.descripcion }}</td>
-            <td>{{ formatearPrecio(pizza.precio) }}</td>
+            <td class="pizza-tabla__precio">{{ formatearPrecio(pizza.precio) }}</td>
             <td class="pizza-tabla__acciones">
-              <button type="button" @click="emit('editar', pizza)">Editar</button>
-              <button type="button" @click="emit('eliminar', pizza)">Eliminar</button>
+              <button type="button" class="pizza-tabla__editar" @click="emit('editar', pizza)">
+                Editar
+              </button>
+              <button type="button" class="pizza-tabla__eliminar" @click="emit('eliminar', pizza)">
+                Eliminar
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
+
+      <p class="pizza-tabla__resumen">
+        Precio promedio del catálogo: <strong>{{ formatearPrecio(precioPromedio) }}</strong>
+        <span class="pizza-tabla__resumen-cantidad">({{ pizzas.length }} pizzas)</span>
+      </p>
     </div>
   </div>
 </template>
@@ -72,39 +108,90 @@ function formatearPrecio(precio) {
 .pizza-tabla__vacio {
   text-align: center;
   padding: 3rem 1rem;
-  color: #2a170f;
+  color: #7a5b4c;
+  font-family: 'Figtree', system-ui, sans-serif;
+}
+
+.pizza-tabla__vacio-icono {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 0.5rem;
 }
 
 .pizza-tabla__vacio button {
-  margin-top: 0.75rem;
-  padding: 0.6rem 1.2rem;
+  margin-top: 1rem;
+  padding: 0.6rem 1.3rem;
   border: none;
-  border-radius: 6px;
-  background-color: #2a6a48;
-  color: #fff8f6;
+  border-radius: 2px;
+  background-color: #a62518;
+  color: #fbf3e7;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
 .pizza-tabla__tabla {
   width: 100%;
-  min-width: 560px; /* por debajo de este ancho, mejor que se desplace que se aplaste */
+  min-width: 620px; /* por debajo de este ancho, mejor que se desplace que se aplaste */
   border-collapse: collapse;
+  font-family: 'Figtree', system-ui, sans-serif;
 }
 
-.pizza-tabla__tabla th,
-.pizza-tabla__tabla td {
-  padding: 0.6rem;
+.pizza-tabla__tabla thead th {
+  padding: 0 0.6rem 0.9rem;
   text-align: left;
-  border-bottom: 1px solid #fff8f6;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #a62518;
+  border-bottom: 1.5px solid #e0cfc3;
+}
+
+.pizza-tabla__tabla tbody td {
+  padding: 0.85rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid #f0e3d8;
   color: #2a170f;
+}
+
+.pizza-tabla__tabla tbody tr:hover {
+  background-color: #fbf3e7;
+}
+
+.pizza-tabla__nombre {
+  font-weight: 600;
+}
+
+.pizza-tabla__badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+  background-color: #a62518;
+  color: #fff8f6;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.pizza-tabla__precio {
+  color: #2a6a48;
+  font-weight: 600;
 }
 
 .pizza-tabla__foto,
 .pizza-tabla__sin-foto {
   width: 48px;
   height: 48px;
-  border-radius: 6px;
+  border-radius: 50%;
   object-fit: cover;
+  border: 1.5px solid rgba(166, 37, 24, 0.35);
 }
 
 .pizza-tabla__sin-foto {
@@ -113,7 +200,7 @@ function formatearPrecio(precio) {
   justify-content: center;
   background-color: #2a170f;
   color: #fff8f6;
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   text-align: center;
 }
 
@@ -122,6 +209,7 @@ function formatearPrecio(precio) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis; /* corta el texto y pone "..." si no cabe en una sola línea */
+  color: #7a5b4c;
 }
 
 .pizza-tabla__acciones {
@@ -130,10 +218,53 @@ function formatearPrecio(precio) {
 }
 
 .pizza-tabla__acciones button {
-  padding: 0.35rem 0.75rem;
-  border: 1px solid #2a170f;
-  border-radius: 6px;
-  background-color: transparent;
+  padding: 0.4rem 0.85rem;
+  border-radius: 2px;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.pizza-tabla__editar {
+  border: 1px solid #2a170f;
+  background-color: transparent;
+  color: #2a170f;
+}
+
+.pizza-tabla__editar:hover {
+  background-color: #2a170f;
+  color: #fff8f6;
+}
+
+.pizza-tabla__eliminar {
+  border: 1px solid #a62518;
+  background-color: transparent;
+  color: #a62518;
+}
+
+.pizza-tabla__eliminar:hover {
+  background-color: #a62518;
+  color: #fff8f6;
+}
+
+.pizza-tabla__resumen {
+  margin: 1.1rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid #f0e3d8;
+  color: #7a5b4c;
+  font-size: 0.85rem;
+}
+
+.pizza-tabla__resumen strong {
+  color: #2a6a48;
+}
+
+.pizza-tabla__resumen-cantidad {
+  margin-left: 0.3rem;
+  color: #a79284;
 }
 </style>

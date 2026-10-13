@@ -21,7 +21,8 @@ CREATE TABLE Pizza (
   Nombre VARCHAR(50) NOT NULL,         -- una pizza sin nombre no se puede mostrar
   Precio INT NOT NULL,                 -- pesos sin centavos; evita tarjetas sin precio
   Imagen VARCHAR(100),                 -- solo el nombre del archivo, ej. 'hawaiana.jpg'
-  Descripcion VARCHAR(200)             -- opcional
+  Descripcion VARCHAR(200),            -- opcional
+  Destacado TINYINT(1) NOT NULL DEFAULT 0  -- 1 = se marca con una insignia "Destacado" en el panel admin
 ) ENGINE=InnoDB;
 
 -- -----------------------------------------
@@ -40,13 +41,13 @@ CREATE TABLE Usuario (
 -- No se escribe el Id porque es AUTO_INCREMENT: lo asigna MySQL.
 -- Imagen debe coincidir con los archivos de frontend-vue/public/images/pizzas/
 -- -----------------------------------------
-INSERT INTO Pizza (Nombre, Precio, Imagen, Descripcion) VALUES
-  ('Hawaiana', 32000, 'hawaiana.jpg', 'Queso mozzarella, jamón y piña'),
-  ('Pepperoni', 30000, 'pepperoni.jpg', 'Salsa de tomate, mozzarella y pepperoni'),
-  ('Mexicana', 34000, 'mexicana.jpg', 'Salsa de tomate, mozzarella, carne molida, fríjol, jalapeño, maíz y cilantro'),
-  ('Carnes', 36000, 'carnes.jpg', 'Salsa de tomate, mozzarella, carne desmechada, chorizo y tocineta'),
-  ('Costillas BBQ', 38000, 'costillas.jpg', 'Salsa BBQ, mozzarella, costilla de cerdo desmechada y cebolla morada'),
-  ('Pollo y Champiñón', 40000, 'pollo-champinon.jpg', 'Salsa de tomate, mozzarella, pollo desmechado y champiñones');
+INSERT INTO Pizza (Nombre, Precio, Imagen, Descripcion, Destacado) VALUES
+  ('Hawaiana', 32000, 'hawaiana.jpg', 'Queso mozzarella, jamón y piña', 1),
+  ('Pepperoni', 30000, 'pepperoni.jpg', 'Salsa de tomate, mozzarella y pepperoni', 0),
+  ('Mexicana', 34000, 'mexicana.jpg', 'Salsa de tomate, mozzarella, carne molida, fríjol, jalapeño, maíz y cilantro', 0),
+  ('Carnes', 36000, 'carnes.jpg', 'Salsa de tomate, mozzarella, carne desmechada, chorizo y tocineta', 0),
+  ('Costillas BBQ', 38000, 'costillas.jpg', 'Salsa BBQ, mozzarella, costilla de cerdo desmechada y cebolla morada', 0),
+  ('Pollo y Champiñón', 40000, 'pollo-champinon.jpg', 'Salsa de tomate, mozzarella, pollo desmechado y champiñones', 0);
 
 -- -----------------------------------------
 -- Primer administrador

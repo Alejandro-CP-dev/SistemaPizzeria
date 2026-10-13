@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import HeroScroll from '../components/HeroScroll.vue'
 import SobreNosotros from '../components/SobreNosotros.vue'
+import CarruselPizzas from '../components/CarruselPizzas.vue'
 import MenuPizzas from '../components/MenuPizzas.vue'
 
 // Esta es la misma lógica de carga que antes vivía en App.vue: se movió aquí porque
@@ -35,6 +36,11 @@ onMounted(() => {
   <div>
     <HeroScroll />
     <SobreNosotros />
+
+    <!-- Se muestra sola (sin v-if propio) porque CarruselPizzas ya decide internamente
+         si tiene algo para mostrar: mientras "pizzas" sigue vacío (cargando, o el fetch
+         falló) no dibuja nada, y aparece apenas lleguen pizzas con foto. -->
+    <CarruselPizzas :pizzas="pizzas" />
 
     <!-- El estado de carga/error se maneja aquí, antes de llegar a MenuPizzas, porque
          MenuPizzas no sabe (ni necesita saber) nada de fetch: solo recibe un arreglo. -->

@@ -435,6 +435,21 @@ const textoConteo = computed(() => {
   align-items: start;
 }
 
+/*
+ * min-width: 0 en los dos hijos del grid: sin esto, un elemento de grid "hereda" como
+ * ancho mínimo el ancho de su contenido más ancho (min-width: auto es el valor por
+ * defecto). PizzaTabla.vue trae una tabla con min-width: 620px para su propio scroll
+ * interno; sin esta regla, ese ancho se filtra hacia arriba y obliga a TODA la columna
+ * del grid (en celular, la misma columna donde también vive el formulario) a crecer más
+ * allá de la pantalla, aunque la tabla tenga su propio overflow-x: auto. Es el motivo por
+ * el que, antes de este arreglo, el panel del formulario se veía empujado fuera de la
+ * pantalla en celular.
+ */
+.admin__grid-tabla,
+.admin__grid-form {
+  min-width: 0;
+}
+
 @media (min-width: 1024px) {
   .admin__grid {
     grid-template-columns: repeat(12, 1fr);

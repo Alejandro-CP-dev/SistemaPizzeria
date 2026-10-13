@@ -35,7 +35,7 @@ function formatearPrecio(precio) {
        "invertido" es true; es la forma estándar de Vue para activar una clase de CSS según
        una condición, en vez de armar el texto de la clase a mano con un ternario. -->
   <div class="pizza-card" :class="{ 'pizza-card--invertido': invertido }">
-    <div class="pizza-card__aro">
+    <div class="pizza-card__foto">
       <!-- Si no hay nombre de imagen (pizza nueva sin foto, o el campo llegó vacío desde la
            BD), mostramos un recuadro con texto en vez de un <img> roto. -->
       <div v-if="!pizza.imagen" class="pizza-card__sin-foto">Sin foto</div>
@@ -48,11 +48,16 @@ function formatearPrecio(precio) {
     </div>
 
     <div class="pizza-card__info">
-      <span class="pizza-card__nombre">{{ pizza.nombre }}</span>
+      <div class="pizza-card__fila">
+        <h3 class="pizza-card__nombre">{{ pizza.nombre }}</h3>
+        <!-- Igual que con la foto: una pizza recién creada en PizzaForm empieza con
+             precio = null (todavía no se ha escrito nada), y llamar a formatearPrecio(null)
+             rompería (null no tiene .toLocaleString). Por eso también aquí hay un v-if/v-else,
+             en vez de confiar en que "precio" siempre va a venir con un número. -->
+        <span v-if="pizza.precio" class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</span>
+        <span v-else class="pizza-card__precio pizza-card__precio--vacio">Sin precio</span>
+      </div>
       <p class="pizza-card__descripcion">{{ pizza.descripcion }}</p>
-      <!-- Llamamos formatearPrecio directamente aquí, pasándole pizza.precio; Vue ejecuta esta
-           función cada vez que el componente se dibuja, no hace falta computed para algo tan simple -->
-      <span class="pizza-card__precio">{{ formatearPrecio(pizza.precio) }}</span>
     </div>
   </div>
 </template>
@@ -60,36 +65,55 @@ function formatearPrecio(precio) {
 <style scoped>
 .pizza-card {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--surface-container);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 1px 3px rgba(44, 24, 16, 0.08);
+  transition: box-shadow 0.2s;
 }
 
-/* row-reverse intercambia el orden visual de los dos hijos (el aro con la foto y el bloque
-   de texto) sin tocar el HTML: es la misma estructura, solo se dibuja al revés. */
-.pizza-card--invertido {
-  flex-direction: row-reverse;
+.pizza-card:hover {
+  box-shadow: 0 4px 16px rgba(44, 24, 16, 0.12);
 }
 
-.pizza-card--invertido .pizza-card__info {
-  text-align: right;
+@media (min-width: 640px) {
+  .pizza-card {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  /* row-reverse intercambia el orden visual de los dos hijos (la foto y el bloque de
+     texto) sin tocar el HTML: es la misma estructura, solo se dibuja al revés. En celular
+     (ver regla de arriba) no se invierte nada: la foto siempre queda arriba. */
+  .pizza-card--invertido {
+    flex-direction: row-reverse;
+  }
 }
 
-.pizza-card__aro {
+.pizza-card__foto {
   flex-shrink: 0;
-  width: 170px;
-  height: 170px;
-  margin: 0 auto;
-  border-radius: 50%;
-  background-color: #a62518; /* rojo tomate: el "aro" grueso alrededor de la foto */
-  padding: 8px; /* este padding es justamente lo que deja ver el aro rojo detrás de la foto */
+  width: 100%;
+  max-width: 220px;
+  height: 160px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(44, 24, 16, 0.18);
+}
+
+@media (min-width: 640px) {
+  .pizza-card__foto {
+    width: 128px;
+    height: 128px;
+  }
 }
 
 .pizza-card__imagen,
 .pizza-card__sin-foto {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
   object-fit: cover;
 }
 
@@ -97,60 +121,47 @@ function formatearPrecio(precio) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #2a170f; /* café */
-  color: #fff8f6;
-  font-size: 0.7rem;
+  background-color: var(--inverse-surface);
+  color: var(--inverse-on-surface);
+  font: var(--fw-label-sm) var(--fs-label-sm)/var(--lh-label-sm) var(--font-body);
   text-align: center;
 }
 
 .pizza-card__info {
-  flex: 1 1 280px;
-  min-width: 240px;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.pizza-card__fila {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-sm);
 }
 
 .pizza-card__nombre {
-  display: inline-block;
-  background-color: #a62518;
-  color: #fbf3e7; /* papel: mismo tono cálido que el resto de la página */
-  font-family: 'Baloo 2', sans-serif;
-  font-weight: 700;
-  font-size: 1.15rem;
-  padding: 0.55rem 1.4rem;
-  border-radius: 999px;
-}
-
-.pizza-card__descripcion {
-  font-family: 'Figtree', system-ui, sans-serif;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: #7a5b4c; /* café suave: texto secundario, menos protagonista que el nombre */
-  margin: 0.9rem 0 0;
+  margin: 0;
+  font: var(--fw-headline-sm) var(--fs-headline-sm)/var(--lh-headline-sm) var(--font-headline);
+  color: var(--on-surface);
+  letter-spacing: -0.01em;
 }
 
 .pizza-card__precio {
-  display: inline-block;
-  margin-top: 0.7rem;
-  background-color: #e3eee7; /* verde albahaca muy tenue, de fondo */
-  color: #2a6a48; /* verde albahaca: distingue el precio del resto del texto */
-  font-family: 'Figtree', system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 0.9rem;
-  padding: 0.35rem 1rem;
-  border-radius: 999px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font: var(--fw-metric-num) var(--fs-metric-num)/var(--lh-metric-num) var(--font-body);
+  color: var(--primary);
 }
 
-/* En pantallas angostas no alcanza el espacio para foto + texto lado a lado: todo pasa a una
-   sola columna centrada, sin importar si la fila era "invertida" o no (invertir el orden ya
-   no tiene sentido visual cuando todo está apilado). */
-@media (max-width: 560px) {
-  .pizza-card,
-  .pizza-card--invertido {
-    flex-direction: column;
-    text-align: center;
-  }
+.pizza-card__precio--vacio {
+  font: var(--fw-label-md) var(--fs-label-md)/var(--lh-label-md) var(--font-body);
+  color: var(--on-surface-variant);
+}
 
-  .pizza-card--invertido .pizza-card__info {
-    text-align: center;
-  }
+.pizza-card__descripcion {
+  margin: 0.25rem 0 0;
+  font: var(--fw-body-sm) var(--fs-body-sm)/var(--lh-body-sm) var(--font-body);
+  color: var(--on-surface-variant);
 }
 </style>

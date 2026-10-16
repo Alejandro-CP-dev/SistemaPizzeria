@@ -4,6 +4,7 @@ import HeroScroll from '../components/HeroScroll.vue'
 import SobreNosotros from '../components/SobreNosotros.vue'
 import MenuInteractivo from '../components/MenuInteractivo.vue'
 import MenuPizzas from '../components/MenuPizzas.vue'
+import Footer from '../components/Footer.vue'
 
 // Esta es la misma lógica de carga que antes vivía en App.vue: se movió aquí porque
 // ahora App.vue solo arma el layout general (NavBar + la vista de turno) y esta
@@ -47,6 +48,8 @@ onMounted(() => {
     <section v-if="cargando" class="menu-estado">Cargando pizzas...</section>
     <section v-else-if="error" class="menu-estado">{{ error }}</section>
     <MenuPizzas v-else :pizzas="pizzas" />
+
+    <Footer />
   </div>
 </template>
 

@@ -10,6 +10,12 @@
 const ESCALA_MINIMA = 0.72
 const OPACIDAD_MINIMA = 0.35
 
+// Separación horizontal entre el borde de una tarjeta y la siguiente. Las tarjetas
+// son position:absolute (para poder deslizarlas con un solo número, "posicion", en
+// vez de mover 6 elementos distintos), así que CSS "gap" no les sirve: cada una debe
+// decir explícitamente a cuántos píxeles de la tarjeta 0 le toca pararse.
+const SEPARACION = 28
+
 function escalaPorDistancia(distancia) {
   return Math.max(ESCALA_MINIMA, 1 - 0.22 * Math.abs(distancia))
 }
@@ -29,7 +35,7 @@ function limitar(valor, minimo, maximo) {
 </script>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import gsap from 'gsap'
 
 const props = defineProps({
@@ -73,18 +79,27 @@ const anchoContenedor = ref(960)
 function medir() {
   const primeraCarta = cartaEls.value[0]
   if (primeraCarta) anchoTarjeta.value = primeraCarta.getBoundingClientRect().width
-  if (raiz.value) anchoContenedor.value = raiz.value.getBoundingClientRect().width
+  // Se mide la "pista" (el carril por donde se deslizan las tarjetas), no la sección
+  // completa: la sección también incluye las dos flechas, así que su ancho total NO
+  // es el espacio real disponible para centrar una tarjeta.
+  if (pistaEl.value) anchoContenedor.value = pistaEl.value.getBoundingClientRect().width
 }
+
+// Distancia (en píxeles) entre el inicio de una tarjeta y el inicio de la siguiente:
+// es la unidad que se usa para todo el cálculo de posiciones y de arrastre. "posicion"
+// nunca está en píxeles sueltos, siempre en "cuántos pasos de este tamaño".
+const paso = computed(() => anchoTarjeta.value + SEPARACION)
 
 // Traslado en píxeles de toda la cinta: centra la tarjeta "posicion" restando la
 // mitad de su ancho y usando la mitad del contenedor como punto central.
-const trasladoPx = computed(
-  () => anchoContenedor.value / 2 - anchoTarjeta.value / 2 - posicion.value * anchoTarjeta.value
-)
+const trasladoPx = computed(() => anchoContenedor.value / 2 - anchoTarjeta.value / 2 - posicion.value * paso.value)
 
 function estiloCarta(indice) {
   const distancia = indice - posicion.value
   return {
+    // Cada tarjeta se ubica a "indice * paso" de la primera; la cinta completa se
+    // desplaza aparte con trasladoPx (ver :style del contenedor .pista).
+    left: `${indice * paso.value}px`,
     transform: `scale(${escalaPorDistancia(distancia)})`,
     opacity: opacidadPorDistancia(distancia),
   }
@@ -177,7 +192,7 @@ function alMover(evento) {
   // Arrastrar hacia la izquierda (deltaPx negativo) debe AVANZAR el índice (como si
   // empujáramos las tarjetas hacia la izquierda para traer la siguiente al centro);
   // por eso se resta, no se suma.
-  let nueva = inicio.posicionInicial - deltaPx / anchoTarjeta.value
+  let nueva = inicio.posicionInicial - deltaPx / paso.value
   // "Resorte" en los extremos: más allá de la primera o la última pizza, el
   // movimiento se frena a un 30% en vez de permitir arrastrar libremente al vacío.
   if (nueva < 0) nueva *= 0.3

@@ -1,8 +1,8 @@
 <script>
-// Funciones y constantes puras en un <script> normal (no reactivo): igual que hace
-// CircularCarousel.vue, viven fuera del <script setup> para que NO se vuelvan a crear
-// en cada instancia del componente (en esta página solo hay una, pero es la misma
-// razón por la que en React estas cosas se sacan del cuerpo del componente).
+// Funciones y constantes puras en un <script> normal (no reactivo): viven fuera del
+// <script setup> para que NO se vuelvan a crear en cada instancia del componente (en
+// esta página solo hay una, pero es la misma razón por la que en React estas cosas se
+// sacan del cuerpo del componente).
 
 // Cuanto más lejos del centro queda una pizza, más chica y más transparente se ve.
 // "distancia" puede ser fraccionaria (ej. 0.4) mientras se arrastra a medio camino

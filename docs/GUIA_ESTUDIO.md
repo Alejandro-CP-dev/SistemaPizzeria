@@ -23,6 +23,7 @@ eventos suben*.
 | `components/NavBar.vue` | Logo, enlaces a las secciones de `/` y botones de sesión. | Se repite en las páginas públicas, así que vive en `App.vue`, no en cada vista (se oculta en `/admin`). |
 | `components/HeroScroll.vue` | Dibuja en un `<canvas>` el fotograma de `public/frames/` que corresponde al scroll. | Es el efecto visual de bienvenida de la página de inicio. |
 | `components/SobreNosotros.vue` | Texto fijo sobre la pizzería. | Sección estática, sin props ni fetch: lo más simple que hay en el proyecto. |
+| `components/MenuInteractivo.vue` | Carrusel arrastrable de pizzas (con inercia) que, al hacer clic en la pizza del centro, la "abre" en 8 porciones con un ticket y un sello animados. | Ver la sección "Menú interactivo" más abajo: reemplaza a los antiguos `CarruselPizzas.vue`/`CircularCarousel.vue`. |
 | `components/MenuPizzas.vue` | Recibe `pizzas` (prop) y dibuja una `PizzaCard` por cada una. | Separa "mostrar la cuadrícula" de "conseguir los datos" (eso lo hace `InicioView`). |
 | `components/PizzaCard.vue` | Una tarjeta: foto (o "Sin foto"), nombre, precio (o "Sin precio") y descripción. | Se reutiliza en 2 lugares: el menú público y la vista previa en vivo de `PizzaForm`. |
 | `components/PizzaForm.vue` | Formulario de crear/editar (panel fijo, no modal) con vista previa en vivo y subida de foto real (`<input type="file">`); valida y emite, nunca hace fetch. | Separa "la forma de los datos" de "qué hacer con ellos" (eso lo decide `AdminView`). |
@@ -242,3 +243,94 @@ sin tocar nada del lado del menú público.
 13. Explica, en tus palabras, qué hace `v-model.number` en el campo de precio del formulario y qué pasaría sin el `.number`.
 14. En `HeroScroll.vue`, ¿por qué la sección mide `300vh` en vez de `100vh`? ¿Qué pasaría con la animación si midiera solo una pantalla?
 15. ¿Por qué es necesario quitar el listener de scroll en `onUnmounted`? ¿Qué problema concreto pasaría si no se quitara?
+
+## 6. Menú interactivo (`MenuInteractivo.vue`)
+
+Esta sección (`id="carta"`, justo después de "Nosotros") reemplazó a los antiguos
+`CarruselPizzas.vue` + `CircularCarousel.vue`. Hace tres cosas: un carrusel que se
+arrastra con inercia, un título que se "enciende" letra por letra, y un panel donde la
+pizza activa se abre en 8 porciones con un ticket y un sello animados. Las pizzas le
+llegan por la prop `pizzas` (el mismo arreglo que ya carga `InicioView.vue`): este
+componente nunca hace `fetch`.
+
+### El `ref` del índice activo
+
+`activa` es un `ref` con el **índice entero** de la pizza que está centrada y quieta
+(la que ven el título, el precio y el botón "abrir detalle"). Es distinto de
+`posicion`, que es la posición **continua** de la cinta (puede valer `2.35`, a medio
+camino entre la tarjeta 2 y la 3, mientras se arrastra). `posicion` se anima con GSAP;
+`activa` solo cambia una vez, al final de esa animación (`onComplete` de `irA`), para
+no "parpadear" el título mientras la cinta todavía se está moviendo.
+
+### Cómo funciona la inercia
+
+Al soltar el arrastre (`alSoltar`), el componente no frena en la tarjeta más cercana a
+donde está la cinta en ese instante: proyecta a dónde habría llegado si siguiera
+deslizando un poco más por el impulso del gesto. Esto pasa en 3 pasos:
+
+1. **Medir la velocidad**: mientras se arrastra, `alMover` va guardando `{tiempo,
+   posicion}` en `inicio.muestras`, pero solo se queda con las de los últimos ~100ms
+   (si guardara todo el arrastre, un gesto que empezó lento y terminó rápido daría una
+   velocidad promedio equivocada). Al soltar, la velocidad es
+   `(posicionFinal - posicionInicial) / segundosTranscurridos`, usando solo la primera
+   y la última muestra de esa ventana de 100ms.
+2. **Proyectar el destino**: `posicion.value + velocidad * 0.18` — a mayor velocidad,
+   más lejos "cae" el objetivo proyectado, como si la cinta siguiera deslizando un
+   poco sola antes de pararse.
+3. **Frenar con una curva, no con un salto**: ese objetivo se redondea a la tarjeta
+   entera más cercana y se anima con `gsap.to(posicion, { value: destino, ease:
+   'power3.out' })`, que arranca rápido y frena suave. La duración varía según qué tan
+   lejos quedó esa tarjeta (`0.25 + distancia * 0.15`, acotada entre 0.25s y 0.9s):
+   cerca frena rápido, lejos tarda más, para que nunca se sienta como un salto brusco.
+
+### Por qué `gsap.context()` y por qué hay que limpiarlo
+
+El sitio es una SPA: Vue **no recarga la página** al navegar a `/login` o `/admin`,
+solo destruye el componente actual y monta el nuevo. Si en ese momento había una
+animación de GSAP corriendo (la cinta todavía frenando por inercia, o el sello del
+panel de detalle girando sin fin con `repeat: -1`), esa animación **no se entera** de
+que el componente desapareció: sigue corriendo en segundo plano y, en cada fotograma,
+sigue escribiendo en un `ref` (`posicion`, `precioMostrado`...) que pertenece a una
+instancia de Vue que ya no existe. Eso es, como mínimo, trabajo desperdiciado, y en el
+peor caso puede lanzar errores al intentar tocar un elemento del DOM que ya se quitó.
+
+`gsap.context(() => {}, raiz.value)` crea un "cajón" que agrupa animaciones para poder
+deshacerlas todas de una vez. Las creadas de forma **síncrona** dentro de esa función
+quedarían registradas solas, pero casi todas las de este componente se crean después,
+disparadas por un evento (arrastrar, hacer clic, cambiar de pizza) — por eso se
+envuelven en `ctx.add(() => { ... })`, que las registra en el mismo cajón aunque se
+creen más tarde. `onUnmounted` llama a `ctx.revert()`, que mata de un golpe **todas**
+las animaciones registradas (la inercia, el stagger del título, la timeline del panel,
+el giro del sello) y además deshace cualquier cambio de estilo inline que GSAP haya
+dejado, dejando el DOM limpio justo antes de que Vue lo destruya.
+
+### Cómo se corta la pizza con `clip-path`
+
+`clip-path` no tiene curvas: solo puede recortar con líneas rectas (`polygon(...)`).
+Una porción de pizza, en cambio, tiene un borde curvo (el arco exterior del círculo).
+La solución (función `clipPorcion` en el `<script>` del componente) es **aproximar esa
+curva con varios segmentos rectos cortos**: para cada una de las 8 porciones (45° cada
+una), se calculan 6 puntos a lo largo de su arco exterior (con trigonometría:
+`anguloAPunto` usa `cos`/`sin` para ubicar un punto a cierto radio y ángulo) y se arma
+un `polygon()` que va del centro (50%, 50%) a esos puntos y de vuelta. Con 6 segmentos
+por cada 45° el "redondeo" ya se ve liso a simple vista, aunque técnicamente sea una
+figura de líneas rectas. Las 8 porciones son 8 copias de la **misma** foto (mismo
+`background-image`, mismo tamaño), cada una recortada con su propio `polygon()`;
+luego, para que se vean "servidas", cada una se traslada (`x`, `y`) en la dirección de
+su propio ángulo medio (`separacionPorcion`), alejándose del centro.
+
+### Preguntas de examen (sin respuestas)
+
+1. ¿Por qué el componente usa dos variables de estado distintas para la posición del
+   carrusel (`posicion` y `activa`) en vez de una sola?
+2. En `alSoltar`, ¿qué pasaría si se usara la velocidad promedio de **todo** el
+   arrastre (desde el primer `pointerdown`) en vez de solo la de los últimos 100ms?
+3. ¿Por qué las animaciones creadas dentro de un `setTimeout` o un manejador de
+   eventos necesitan `ctx.add(() => {...})`, mientras que las que se crean
+   directamente dentro de `gsap.context(() => {...})` no lo necesitan?
+4. Si `MenuInteractivo.vue` no llamara a `ctx.revert()` en `onUnmounted`, ¿qué se
+   podría observar en la consola del navegador después de entrar a `/login` y volver
+   varias veces seguidas a `/`?
+5. `clipPorcion` no dibuja un arco real, sino un polígono con varios segmentos rectos.
+   ¿Qué pasaría visualmente con las porciones si `SEGMENTOS_ARCO` valiera 1 en vez de
+   6? ¿Y si valiera 50?

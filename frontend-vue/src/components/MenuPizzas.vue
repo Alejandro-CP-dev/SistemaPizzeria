@@ -1,11 +1,18 @@
 <script setup>
-import PizzaCard from './PizzaCard.vue'
-
 // Recibe la lista ya cargada desde InicioView: este componente nunca hace fetch por su
 // cuenta, solo se encarga de dibujar lo que le llega.
 defineProps({
   pizzas: Array,
 })
+
+// $32.000 en vez de 32000: misma idea que formatearPrecio() en PizzaCard.vue. No se
+// reutiliza PizzaCard aquí a propósito: ese componente también vive dentro de
+// PizzaForm.vue (vista previa del panel de admin, con los colores de tokens.css) y
+// esta grilla pública necesita su propia tarjeta, más compacta y con la paleta del
+// sitio público, sin arrastrar un cambio visual al panel.
+function formatearPrecio(precio) {
+  return '$' + Number(precio || 0).toLocaleString('es-CO')
+}
 </script>
 
 <template>
@@ -29,25 +36,27 @@ defineProps({
       />
     </svg>
 
-    <!-- (pizza, indice) en vez de solo "pizza": v-for entrega la posición de cada elemento
-         como segundo valor. Se usa solo para decidir el lado de la foto (índice par: foto a
-         la izquierda; índice impar: a la derecha) — por eso no hace falta en :key, que sigue
-         usando pizza.id como siempre. -->
     <div class="menu__lista">
-      <PizzaCard
-        v-for="(pizza, indice) in pizzas"
-        :key="pizza.id"
-        :pizza="pizza"
-        :invertido="indice % 2 === 1"
-      />
+      <article v-for="pizza in pizzas" :key="pizza.id" class="menu__tarjeta">
+        <div v-if="!pizza.imagen" class="menu__sin-foto">Sin foto</div>
+        <img v-else :src="`/images/pizzas/${pizza.imagen}`" :alt="pizza.nombre" class="menu__foto" />
+
+        <div class="menu__info">
+          <div class="menu__fila">
+            <h3 class="menu__nombre">{{ pizza.nombre }}</h3>
+            <span class="menu__precio">{{ formatearPrecio(pizza.precio) }}</span>
+          </div>
+          <p class="menu__descripcion">{{ pizza.descripcion }}</p>
+        </div>
+      </article>
     </div>
   </section>
 </template>
 
 <style scoped>
 .menu {
-  background-color: #f3e6dc; /* crema profunda: separa esta sección del Nosotros oscuro de arriba */
-  padding: 5rem 1.5rem 6rem;
+  background-color: #f7ead9; /* crema cálida: separa esta sección del Nosotros oscuro de arriba */
+  padding: 6rem 1.5rem;
   /* Compensa el navbar "sticky" (NavBar.vue) al saltar aquí desde el enlace "Menú". */
   scroll-margin-top: 80px;
 }
@@ -67,10 +76,13 @@ defineProps({
 }
 
 .menu__titulo {
-  font-family: 'Baloo 2', sans-serif;
-  font-weight: 800;
+  /* Marcellus en vez de Baloo 2: el resto del sitio (NavBar, Hero, Nosotros, Carta) ya
+     usa Marcellus para sus títulos; Baloo 2 (redondeada, gruesa) era la única excepción
+     y rompía la unidad tipográfica de la página. */
+  font-family: 'Marcellus', Georgia, serif;
+  font-weight: 400;
   font-size: 2.75rem;
-  color: #a62518;
+  color: #2a170f;
   margin: 0;
 }
 
@@ -83,10 +95,92 @@ defineProps({
 }
 
 .menu__lista {
-  display: flex;
-  flex-direction: column;
-  gap: 3.5rem;
-  max-width: 980px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.75rem;
+  max-width: 1100px;
   margin: 0 auto;
+}
+
+.menu__tarjeta {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  background-color: #fffaf6;
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(42, 23, 15, 0.08);
+}
+
+.menu__foto,
+.menu__sin-foto {
+  flex-shrink: 0;
+  width: 112px;
+  height: 112px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.menu__sin-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ece0d2;
+  color: #8a7261;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.menu__info {
+  min-width: 0;
+}
+
+.menu__fila {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.menu__nombre {
+  margin: 0;
+  font-family: 'Marcellus', Georgia, serif;
+  font-weight: 400;
+  font-size: 1.2rem;
+  color: #2a170f;
+}
+
+.menu__precio {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #a62518;
+}
+
+.menu__descripcion {
+  margin: 0.4rem 0 0;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #5c4335;
+}
+
+@media (max-width: 720px) {
+  .menu__lista {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .menu__tarjeta {
+    flex-direction: column;
+  }
+
+  .menu__foto,
+  .menu__sin-foto {
+    width: 100%;
+    height: 160px;
+  }
 }
 </style>

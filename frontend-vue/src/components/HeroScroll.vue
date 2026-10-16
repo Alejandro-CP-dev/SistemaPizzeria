@@ -114,7 +114,34 @@ onUnmounted(() => {
          de ver la pizza "fija" en el centro mientras los fotogramas van cambiando. -->
     <div class="hero__pin">
       <canvas ref="canvas" class="hero__canvas"></canvas>
-      <h1 class="hero__titulo">PIZZA</h1>
+      <!-- Degradado oscuro encima del canvas: sin él, el texto y los botones nuevos de
+           abajo perdían contraste según qué tan clara saliera la pizza del fotograma
+           actual. Solo decoración, por eso aria-hidden. -->
+      <div class="hero__velo" aria-hidden="true"></div>
+
+      <div class="hero__contenido">
+        <p class="hero__ojo">Horno de leña · Sogamoso</p>
+        <h1 class="hero__titulo">PIZZA</h1>
+        <p class="hero__bajada">
+          Masa de 24 horas, horno de leña y productos de pequeños productores. Cada pizza
+          se sirve como un plato, no como una entrega rápida.
+        </p>
+        <div class="hero__botones">
+          <RouterLink :to="{ path: '/', hash: '#carta' }" class="hero__boton hero__boton--relleno">
+            Ver la carta
+          </RouterLink>
+          <RouterLink :to="{ path: '/', hash: '#nosotros' }" class="hero__boton hero__boton--contorno">
+            Nuestra historia
+          </RouterLink>
+        </div>
+      </div>
+
+      <div class="hero__desliza" aria-hidden="true">
+        <span>Desliza</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </div>
     </div>
   </section>
 </template>
@@ -148,13 +175,111 @@ onUnmounted(() => {
   height: 100%;
 }
 
-.hero__titulo {
+.hero__velo {
+  position: absolute;
+  inset: 0;
+  /* Más claro arriba (donde no hay texto) y bien oscuro abajo (donde están la bajada y
+     los botones), para que el fotograma de la pizza siga siendo protagonista arriba. */
+  background: linear-gradient(180deg, rgba(27, 17, 10, 0.1) 0%, rgba(27, 17, 10, 0.35) 48%, rgba(18, 11, 6, 0.82) 100%);
+}
+
+.hero__contenido {
   position: relative;
-  z-index: 1; /* por encima del canvas, que no tiene z-index y queda "debajo" en el flujo normal */
+  z-index: 1; /* por encima del canvas y del velo, que no tienen z-index y quedan "debajo" */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  max-width: 640px;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+.hero__ojo {
+  margin: 0;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255, 248, 246, 0.88);
+}
+
+.hero__titulo {
   margin: 0;
   color: #fff8f6;
   font-size: clamp(3rem, 15vw, 9rem); /* clamp: nunca más chico que 3rem ni más grande que 9rem */
   letter-spacing: 0.15em;
+  line-height: 1;
   text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+
+.hero__bajada {
+  margin: 0;
+  max-width: 34rem;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1.5;
+  color: rgba(255, 248, 246, 0.92);
+}
+
+.hero__botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.hero__boton {
+  padding: 0.85rem 2rem;
+  border-radius: 2px;
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff8f6;
+}
+
+.hero__boton--relleno {
+  background-color: var(--primary, #a62518);
+}
+
+.hero__boton--relleno:hover {
+  background-color: #8e1f14;
+}
+
+.hero__boton--contorno {
+  border: 1px solid rgba(255, 248, 246, 0.55);
+}
+
+.hero__boton--contorno:hover {
+  border-color: #fff8f6;
+}
+
+.hero__desliza {
+  position: absolute;
+  left: 50%;
+  bottom: 1.75rem;
+  z-index: 1;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255, 248, 246, 0.65);
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 560px) {
+  .hero__desliza {
+    display: none; /* en celular, donde la "pantalla completa" ya mide poco, estorba más de lo que ayuda */
+  }
 }
 </style>

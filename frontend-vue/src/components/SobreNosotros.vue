@@ -15,8 +15,37 @@
           productores de Sogamoso. Una mesa donde cada pizza se sirve como un plato,
           no como una entrega rápida.
         </p>
+
+        <!-- Mismos 3 datos que ya cuenta el párrafo de arriba (24 horas, horno de leña,
+             productores de Sogamoso), solo que resaltados aparte: le dan al texto un
+             segundo punto de apoyo visual, en vez de depender solo del párrafo largo. -->
+        <div class="nosotros__estadisticas">
+          <div class="nosotros__estadistica">
+            <span class="nosotros__estadistica-numero">24H</span>
+            <span class="nosotros__estadistica-etiqueta">Fermentación lenta</span>
+          </div>
+          <div class="nosotros__separador" aria-hidden="true"></div>
+          <div class="nosotros__estadistica">
+            <span class="nosotros__estadistica-numero">100%</span>
+            <span class="nosotros__estadistica-etiqueta">Horno de leña</span>
+          </div>
+          <div class="nosotros__separador" aria-hidden="true"></div>
+          <div class="nosotros__estadistica">
+            <span class="nosotros__estadistica-numero">Km 0</span>
+            <span class="nosotros__estadistica-etiqueta">Productores de Sogamoso</span>
+          </div>
+        </div>
       </div>
-      <img src="/images/background.jpg" alt="Horno de la pizzería" class="nosotros__imagen" />
+
+      <div class="nosotros__foto">
+        <img src="/images/background.jpg" alt="Horno de la pizzería" class="nosotros__imagen" />
+        <div class="nosotros__insignia">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a62518" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8.5 14.5A2.5 2.5 0 0011 17c1.5 0 2.5-1 2.5-2.5 0-1.5-1.5-2-1-3.5.5 1 2 1.5 2 3.5a4.5 4.5 0 01-9 0C5.5 10 8 8.5 7.5 4c3 1 5.5 5 3.5 7.5 1-.5 2-2 1.5-4 2 1.5 3.5 4 3.5 7a7 7 0 01-14 0c0-4 3-6 4-10" />
+          </svg>
+          <span>Horno de leña real</span>
+        </div>
+      </div>
     </div>
   </section>
 </template>
@@ -80,15 +109,88 @@
   margin: 0;
 }
 
-.nosotros__imagen {
+.nosotros__estadisticas {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-top: 2.75rem;
+}
+
+.nosotros__estadistica {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nosotros__estadistica-numero {
+  font-family: 'Marcellus', Georgia, serif;
+  font-size: 1.6rem;
+  color: #fff8f6;
+}
+
+.nosotros__estadistica-etiqueta {
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 248, 246, 0.6);
+}
+
+.nosotros__separador {
+  width: 1px;
+  height: 2.4rem;
+  background-color: rgba(255, 248, 246, 0.18);
+}
+
+.nosotros__foto {
+  position: relative;
   flex: 1 1 320px;
   min-width: 280px;
   max-width: 480px;
+}
+
+.nosotros__imagen {
+  display: block;
+  width: 100%;
   height: 320px;
   object-fit: cover;
+  border-radius: 4px;
   /* sepia + saturate + brightness bajan un poco la intensidad de la foto para que no
      compita con el texto claro encima del fondo oscuro; es el mismo truco que se usó
      en el mockup aprobado. */
   filter: sepia(10%) saturate(90%) brightness(0.9);
+}
+
+.nosotros__insignia {
+  position: absolute;
+  left: 1.5rem;
+  bottom: -1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.25rem;
+  background-color: #fff8f6;
+  color: #1b110a;
+  border-radius: 2px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+  font-family: 'Figtree', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .nosotros__estadisticas {
+    flex-wrap: wrap;
+    gap: 1.25rem 2rem;
+  }
+
+  .nosotros__insignia {
+    left: 1rem;
+    bottom: -1rem;
+    padding: 0.7rem 1rem;
+    font-size: 0.72rem;
+  }
 }
 </style>

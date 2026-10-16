@@ -28,6 +28,7 @@ async function salir() {
     <div class="navbar__enlaces">
       <RouterLink :to="{ path: '/', hash: '#inicio' }">Inicio</RouterLink>
       <RouterLink :to="{ path: '/', hash: '#nosotros' }">Nosotros</RouterLink>
+      <RouterLink :to="{ path: '/', hash: '#carta' }">Carta</RouterLink>
       <RouterLink :to="{ path: '/', hash: '#menu' }">Menú</RouterLink>
     </div>
 

@@ -671,8 +671,8 @@ onUnmounted(() => {
 <style scoped>
 /* Reutiliza los colores de marca de tokens.css (coinciden con el rojo/crema que ya
    usa el resto del sitio público) pero NO sus fuentes: Merriweather/Plus Jakarta Sans
-   son solo del panel de admin. Marcellus/Baloo 2/Figtree siguen escritas literal,
-   igual que en NavBar.vue y MenuPizzas.vue, porque tokens.css no las define. */
+   son solo del panel de admin. Marcellus/Figtree siguen escritas literal, igual que en
+   NavBar.vue y MenuPizzas.vue, porque tokens.css no las define. */
 .menu-interactivo {
   position: relative; /* el panel de detalle (position:absolute) se ubica contra esta sección */
   background-color: #1b110a;
